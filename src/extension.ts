@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { CatScratchEditorProvider } from './catScratchEditor';
+
 
 const cats = {
 	'Coding Cat': 'https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif',
@@ -9,6 +11,10 @@ const cats = {
 };
 
 export function activate(context: vscode.ExtensionContext) {
+
+	// Register our custom editor providers
+	context.subscriptions.push(CatScratchEditorProvider.register(context));
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand('catCoding.start', () => {
 			CatCodingPanel.createOrShow(context.extensionUri, context);

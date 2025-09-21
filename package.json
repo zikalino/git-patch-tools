@@ -31,6 +31,17 @@
 				"title": "Do some refactoring",
 				"category": "Cat Coding"
 			}
+		],
+		"customEditors": [
+        	{
+            	"viewType": "catCustoms.catScratch",
+            	"displayName": "Cat Scratch",
+            	"selector": [
+                	{
+                    	"filenamePattern": "*.patch"
+                	}
+            	]
+        	}
 		]
 	},
 	"scripts": {
