@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 
 const cats = {
 	'Coding Cat': 'https://media.giphy.com/media/JIX9t2j0ZTN9S/giphy.gif',
@@ -9,7 +11,7 @@ const cats = {
 export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('catCoding.start', () => {
-			CatCodingPanel.createOrShow(context.extensionUri);
+			CatCodingPanel.createOrShow(context.extensionUri, context);
 		})
 	);
 
@@ -28,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
 				console.log(`Got state: ${state}`);
 				// Reset the webview options so we use latest uri for `localResourceRoots`.
 				webviewPanel.webview.options = getWebviewOptions(context.extensionUri);
-				CatCodingPanel.revive(webviewPanel, context.extensionUri);
+				CatCodingPanel.revive(webviewPanel, context.extensionUri, context);
 			}
 		});
 	}
@@ -58,8 +60,9 @@ class CatCodingPanel {
 	private readonly _panel: vscode.WebviewPanel;
 	private readonly _extensionUri: vscode.Uri;
 	private _disposables: vscode.Disposable[] = [];
+	private _context: vscode.ExtensionContext;
 
-	public static createOrShow(extensionUri: vscode.Uri) {
+	public static createOrShow(extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
 		const column = vscode.window.activeTextEditor
 			? vscode.window.activeTextEditor.viewColumn
 			: undefined;
@@ -78,16 +81,17 @@ class CatCodingPanel {
 			getWebviewOptions(extensionUri),
 		);
 
-		CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri);
+		CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri, context);
 	}
 
-	public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
-		CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri);
+	public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
+		CatCodingPanel.currentPanel = new CatCodingPanel(panel, extensionUri, context);
 	}
 
-	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
 		this._panel = panel;
 		this._extensionUri = extensionUri;
+		this._context = context;
 
 		// Set the webview's initial html content
 		this._update();
@@ -184,31 +188,35 @@ class CatCodingPanel {
 		// Use a nonce to only allow specific scripts to be run
 		const nonce = getNonce();
 
-		return `<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
+		let htmlPath =  this._context.asAbsolutePath(path.join('media', 'patch-viewer.html'));
+		let html = fs.readFileSync(htmlPath, 'utf-8');
+		
+		return html;
+		//`<!DOCTYPE html>
+		// 	<html lang="en">
+		// 	<head>
+		// 		<meta charset="UTF-8">
 
-				<!--
-					Use a content security policy to only allow loading images from https or from our extension directory,
-					and only allow scripts that have a specific nonce.
-				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
+		// 		<!--
+		// 			Use a content security policy to only allow loading images from https or from our extension directory,
+		// 			and only allow scripts that have a specific nonce.
+		// 		-->
+		// 		<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
 
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		// 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-				<link href="${stylesResetUri}" rel="stylesheet">
-				<link href="${stylesMainUri}" rel="stylesheet">
+		// 		<link href="${stylesResetUri}" rel="stylesheet">
+		// 		<link href="${stylesMainUri}" rel="stylesheet">
 
-				<title>Cat Coding</title>
-			</head>
-			<body>
-				<img src="${catGifPath}" width="300" />
-				<h1 id="lines-of-code-counter">0</h1>
+		// 		<title>Cat Coding</title>
+		// 	</head>
+		// 	<body>
+		// 		<img src="${catGifPath}" width="300" />
+		// 		<h1 id="lines-of-code-counter">0</h1>
 
-				<script nonce="${nonce}" src="${scriptUri}"></script>
-			</body>
-			</html>`;
+		// 		<script nonce="${nonce}" src="${scriptUri}"></script>
+		// 	</body>
+		// 	</html>`;
 	}
 }
 
