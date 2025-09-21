@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Patch Viewer</title>
+    <meta name="viewport" content="width=device-width">
+
+    <style>
+
+    :root {
+        /* body */
+        --fg-normal: black;
+        --bg-normal: white;
+
+        /* diff color */
+        --fg-context: #606060;
+        --bg-sector: #DDDDCC;
+        --bg-add: #C0FFC0;
+        --bg-del: #FFD0D0;
+        --bg-mod: #D0D0FF;
+        --bg-pad: #EEEEEE;
+
+        /* gutter */
+        --fg-gutter: #999999;
+        --bg-gutter: #F7F7F7;
+
+        /* misc */
+        --bg-bar: #EEEEEE;
+        --border: #BFBFBF;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        html {
+            filter: invert(95%) hue-rotate(180deg);
+        }
+    }
+
+    html {
+        background-color: var(--bg-normal);
+        color: var(--fg-normal);
+        font-family: sans-serif;
+    }
+
+    pre {
+        white-space: pre-wrap;
+        word-break: break-all;
+        word-wrap: break-word;
+        padding: 0;
+        margin: 0;
+    }
+
+    td {
+        padding: 0;
+        margin: 0;
+
+        /* Default: prevent selection */
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .selectable {
+        -webkit-user-select: text;
+        user-select: text;
+    }
+
+    textarea {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        -webkit-box-sizing: border-box;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+    }
+
+    .result_table {
+        padding: 0;
+        margin: 0;
+        border-spacing: 0;
+        border: 0.1em none;
+        border-color: var(--border);
+        border-bottom-style: solid;
+        border-left-style: solid;
+        color: black;
+        width: 100%;
+    }
+
+    .code_row {
+        width: 100%;
+    }
+
+    .linenum_cell {
+        width: 0;
+        border-right-style: solid;
+        border-right-width: 0.1em;
+        border-color: var(--bg-pad);
+        background-color: var(--bg-gutter);
+        color: var(--fg-gutter);
+        text-align: right;
+        padding-left: 0.2em;
+        padding-right: 0.2em;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    .linenum_text {
+        white-space: nowrap;
+        word-break: normal;
+        word-wrap: normal;
+    }
+
+    .diff_basic {
+        width: 50%;
+        border-right-style: solid;
+        border-right-width: 0.1em;
+        border-color: var(--border);
+    }
+
+    .diff_context {
+        background-color: var(--bg-normal);
+        color: var(--fg-context);
+    }
+
+    .diff_add {
+        background-color: var(--bg-add);
+    }
+
+    .diff_mod {
+        background-color: var(--bg-mod);
+    }
+
+    .diff_del {
+        background-color: var(--bg-del);
+        color: var(--fg-context);
+    }
+
+    .diff_pad {
+        background-color: var(--bg-pad);
+    }
+
+    .diff_info {
+        padding: 0.1em 0.4em;
+    }
+
+    .diff_split {
+        background-color: var(--bg-pad);
+        color: var(--fg-context);
+        text-align: center;
+        border-top-style: solid;
+        border-top-width: 0.1em;
+        border-bottom-style: solid;
+        border-bottom-width: 0.1em;
+    }
+
+    .diff_sec_title {
+        width: 100%;
+        background-color: var(--bg-sector);
+        color: var(--fg-context);
+        font-weight: bold;
+        border-top-style: solid;
+        border-top-width: 0.1em;
+    }
+
+    .toolbar {
+        background-color: var(--bg-bar);
+        padding: 0.6em;
+        border-radius: 0.6em;
+    }
+
+    .nav_filename {
+        font-weight: bold;
+        font-size: large;
+    }
+
+    .nav_filename_bar {
+        padding-top: 0.5em;
+        padding-bottom: 0.5em;
+    }
+
+    .nav_link {
+        text-decoration: none;
+        color: var(--fg-normal);
+        font-family: monospace;
+        padding-left: 0.3em;
+        padding-right: 0.3em;
+    }
+
+    .nav_link_bar {
+        background-color: var(--bg-bar);
+        border-radius: 0.4em;
+        border-style: solid;
+        border-width: 0.1em;
+        border-color: var(--border);
+    }
+
+    .nav_filelist {
+        font-family: monospace;
+    }
+
+    .nav_filelist_bar {
+        padding-top: 0.5em;
+    }
+
+    </style>
+
+    <script>
+
+    function diffRender(diff, node) {
+        // Common rendering engine STM states
+        const LineState = {
+            CONTEXT  : 0, // unmodified context block, should copy to both sides
+            ADD      : 1, // + block, sideB only
+            DEL      : 2, // - block, sideA only
+            MOD      : 3, // ! block
+            SPLIT    : 4, // section split, contains line range
+            SEC_TITLE: 5, // section title, sideA only
+        };
+
+        // insert file name to file selector
+        function appendFileList(node, fileName) {
+            let title = document.createElement("span");
+            title.setAttribute("class", "nav_filename");
+            title.appendChild(document.createTextNode((fileName === "") ? "Unknown" : fileName));
+
+            let bar = document.createElement("div");
+            bar.setAttribute("class", "nav_filename_bar");
+            bar.appendChild(title);
+
+            node.appendChild(bar);
+        }
+
+        // Add Navigation bar into DOM node.
+        function buildFileNavigator(node, prefix) {
+            let fileNames = node.getElementsByClassName("nav_filename");
+            if (fileNames.length <= 1) {
+                return;
+            }
+
+            // create file navigation bar
+            let defaultItem = document.createElement("option");
+            defaultItem.setAttribute("value", `#${prefix}TOP`);
+            defaultItem.setAttribute("selected", "selected");
+            defaultItem.appendChild(document.createTextNode("< Jump to ... >"));
+
+            let title = document.createElement("span");
+            title.innerHTML = `<a id=${prefix}TOP></a><b>File List:&nbsp;</b>`;
+
+            let list = document.createElement("select");
+            list.setAttribute("onchange", "location.href = this.options[this.selectedIndex].value;");
+            list.setAttribute("class", "nav_filelist");
+            list.appendChild(defaultItem);
+
+            let bar = document.createElement("div");
+            bar.setAttribute("class", "nav_filelist_bar");
+            bar.appendChild(list);
+            bar.insertBefore(title, list);
+
+            for (let i = fileNames.length - 1; i >= 0; i--) {
+                let fileName = fileNames[i];
+                let fileNum = i + 1;
+
+                // Add file name into select list
+                let item = document.createElement("option");
+                item.setAttribute("value", `#${prefix}${fileNum}`);
+                item.appendChild(document.createTextNode(fileName.textContent));
+                list.insertBefore(item, list.firstChild);
+
+                // Add Prev/Next/Tops links before each title, set anchor on TOPS link
+                let smallbar = document.createElement("span");
+                smallbar.setAttribute("class", "nav_link_bar");
+
+                function newNavLink(href, inner, name) {
+                    let link = document.createElement("a");
+                    link.setAttribute("href", href);
+                    link.innerHTML = inner;
+                    link.setAttribute("class", "nav_link");
+                    if (name != null) {
+                        link.setAttribute("name", name);
+                    }
+                    return link;
+                }
+                smallbar.appendChild(newNavLink(`#${prefix}${fileNum - 1}`, "&laquo;", null));
+                smallbar.appendChild(newNavLink(`#${prefix}${fileNum + 1}`, "&raquo;", null));
+                smallbar.appendChild(newNavLink(`#${prefix}TOP`,            "&uArr;",  prefix + fileNum));
+
+                // insert the small nav bar before the file name, and add a space between them
+                fileName.parentNode.insertBefore(smallbar, fileName);
+                fileName.insertBefore(document.createTextNode(" "), fileName.firstChild);
+            }
+
+            // Insert the navigation bar before the first item, and place the default item to first
+            list.removeChild(defaultItem);
+            list.insertBefore(defaultItem, list.firstChild);
+            node.insertBefore(bar, node.firstChild);
+        }   // buildFileNavigator
+
+        // create a line number table cell
+        function newLineNumCell(count) {
+            let td = document.createElement("td");
+            let pre = document.createElement("pre");
+
+            td.setAttribute("class", "linenum_cell");
+            pre.setAttribute("class", "linenum_text");
+            pre.appendChild(document.createTextNode(count));
+            td.appendChild(pre);
+            return td;
+        }
+
+        // create a table cell for code
+        function newCodeCell(isSideB, text, type) {
+            let td = document.createElement("td");
+            let pre = document.createElement("pre");
+
+            switch (type) {
+            case LineState.CONTEXT:
+                td.setAttribute("class", "diff_basic diff_context");
+                break;
+
+            case LineState.SPLIT:
+                td.setAttribute("class", "diff_basic diff_info diff_split");
+                td.setAttribute("colspan", "2");
+                break;
+
+            case LineState.SEC_TITLE:
+                td.setAttribute("class", "diff_basic diff_info diff_sec_title");
+                td.setAttribute("colspan", "4");
+                text = "Section: " + text;
+                break;
+
+            case LineState.ADD:
+                if (isSideB) {
+                    td.setAttribute("class", "diff_basic diff_add");
+                } else {
+                    td.setAttribute("class", "diff_basic diff_pad");
+                    td.setAttribute("colspan", "2");
+                }
+                break;
+
+            case LineState.DEL:
+                if (isSideB) {
+                    td.setAttribute("class", "diff_basic diff_pad");
+                    td.setAttribute("colspan", "2");
+                } else {
+                    td.setAttribute("class", "diff_basic diff_del");
+                }
+                break;
+
+            case LineState.MOD:
+                if (text == null) {
+                    td.setAttribute("class", "diff_basic diff_pad");
+                    td.setAttribute("colspan", "2");
+                } else {
+                    td.setAttribute("class", "diff_basic diff_mod");
+                }
+                break;
+
+            default:
+                break;
+            }
+
+            if (text == null) {
+                text = "";
+            }
+            pre.appendChild(document.createTextNode(text));
+            td.appendChild(pre);
+            return td;
+        }   // newCodeCell()
+
+        // Line buffers to hold the file parse result
+        let sideA = [], sideB = [];
+
+        // Push a line to file buffer
+        function pushLineTo(side, lineText, lineState) {
+            side.push({text: lineText, state: lineState});
+        }
+
+        // Check if file buffer is empty
+        function bufferEmpty() {
+            return (sideA.length === 0) && (sideB.length === 0);
+        }
+
+        // Render a file buffer
+        function renderFile(fileName, node) {
+            let sect_title = null;
+
+            function LineRange(no, count) {
+                return {no: no, count: count, next() {this.no++; this.count--;}};
+            }
+            let rngA = LineRange(1, 0), rngB = LineRange(1, 0);
+
+            // render a row
+            function insertRow(tb, codeA, codeB, type) {
+                // skip the dummy end mark
+                if ((type === LineState.SPLIT) && (codeA == null) && (codeB == null)) {
+                    return;
+                }
+
+                let tr = document.createElement("tr");
+                tr.setAttribute("class", "code_row");
+
+                function appendLine(isSideB, rng, text) {
+                    if ((type !== LineState.SPLIT) && (type !== LineState.SEC_TITLE) && (text != null)) {
+                        // diff content, print with line number
+                        if (rng.count <= 0) {
+                            return;
+                        }
+                        tr.appendChild(newLineNumCell(rng.no));
+                        rng.next();
+                    }
+                    tr.appendChild(newCodeCell(isSideB, text, type));
+                }
+
+                appendLine(false, rngA, codeA);
+                if (type !== LineState.SEC_TITLE) {
+                    appendLine(true, rngB, codeB);
+                }
+                tb.appendChild(tr);
+            }   // insertRow()
+
+            // rendering STM state handler
+            function processState(tb, parseState) {
+                // the processed lines will be shifted, so always fetch the first line
+                let lineA = sideA[0], lineB = sideB[0];
+
+                // process current work first
+                switch (parseState) {
+                // Just sync between diff segments
+                case LineState.SPLIT:
+                    // print sec title if we have one
+                    const hasTitle = (sect_title != null);
+                    if (hasTitle) {
+                        insertRow(tb, sect_title, null, LineState.SEC_TITLE);
+                    }
+                    sect_title = null;
+
+                    // Update the line number and count for current section
+                    function parseRange(text) {
+                        const arr = String(text).split(",").map(Number);
+                        return LineRange(arr[0], (arr.length > 1) ? arr[1] : 1);
+                    }
+                    let newRngA = parseRange(lineA.text), newRngB = parseRange(lineB.text);
+
+                    // check if we can convert line number to skipped line
+                    const skipped = newRngA.no - rngA.no;
+                    if ((skipped > 0) && (skipped === (newRngB.no - rngB.no))) {
+                        let split_text = `${skipped} unchanged line${(skipped === 1) ? "" : "s"} skipped...`;
+                        insertRow(tb, split_text, split_text, parseState);
+                    } else {
+                        if ((newRngA.no <= 1) || (newRngB.no <= 1)) {
+                            // first line, don't print the split
+                            if (!hasTitle) {
+                                tb.setAttribute("style", "border-top-style: solid");
+                            }
+                        } else {
+                            insertRow(tb, lineA.text, lineB.text, parseState);
+                        }
+                    }
+
+                    rngA = newRngA;
+                    rngB = newRngB;
+
+                    sideA.shift();
+                    sideB.shift();
+                    break;
+
+                // section title (diffs attached in DDTS have such title)
+                case LineState.SEC_TITLE:
+                    // cache the section title, will print it after reached next split
+                    sect_title = lineA.text;
+                    sideA.shift();
+                    break;
+
+                // we are in the context section of diff
+                case LineState.CONTEXT:
+                    if (lineB.state !== LineState.CONTEXT) {
+                        // only left side has the context (del only)
+                        insertRow(tb, lineA.text, lineA.text, parseState);
+                        sideA.shift();
+                        break;
+                    }
+
+                    if (lineA.state !== LineState.CONTEXT) {
+                        // only right side has the context (add only)
+                        insertRow(tb, lineB.text, lineB.text, parseState);
+                        sideB.shift();
+                        break;
+                    }
+
+                    // both have context (modify)
+                    // in normal the context should be the same, but we'd better
+                    // to check that
+                    if (lineA.text === lineB.text) {
+                        insertRow(tb, lineA.text, lineB.text, parseState);
+                        sideA.shift();
+                        sideB.shift();
+                    } else {
+                        // not quite sure what happened, but just display context
+                        // from left first
+                        insertRow(tb, lineA.text, lineA.text, parseState);
+                        sideA.shift();
+                    }
+
+                    break;
+
+                // we are in the add section of diff, it can only on the right side
+                case LineState.ADD:
+                    insertRow(tb, null, lineB.text, parseState);
+                    sideB.shift();
+                    break;
+
+                // we are in the del section of diff, it can only on the left side
+                case LineState.DEL:
+                    insertRow(tb, lineA.text, null, parseState);
+                    sideA.shift();
+                    break;
+
+                // we are in the modified section of diff
+                case LineState.MOD:
+                    let modA = null, modB = null;
+
+                    if (lineA.state === LineState.MOD) {
+                        modA = lineA.text;
+                        sideA.shift();
+                    }
+
+                    if (lineB.state === LineState.MOD) {
+                        modB = lineB.text;
+                        sideB.shift();
+                    }
+
+                    insertRow(tb, modA, modB, parseState);
+                    break;
+
+                default:
+                    break;
+                }
+            }   // processState()
+
+            // detect the next FSM state for rendering engine
+            function detectNextState() {
+                // now let's decide next state, make sure we have end-marks in both sides
+                if (sideA.length === 0) {
+                    pushLineTo(sideA, null, LineState.SPLIT);
+                }
+                if (sideB.length === 0) {
+                    pushLineTo(sideB, null, LineState.SPLIT);
+                }
+
+                let lineA = sideA[0], lineB = sideB[0];
+
+                // left reached the end
+                if (lineA.state === LineState.SPLIT) {
+                    return lineB.state;
+                }
+
+                // right reached the end
+                if (lineB.state === LineState.SPLIT) {
+                    return lineA.state;
+                }
+
+                // the priority is :
+                // SectionTitle > Del > Add > Modify > Context
+
+                if ((lineA.state === LineState.SEC_TITLE) || (lineA.state === LineState.DEL)) {
+                    return lineA.state;
+                }
+
+                if (lineB.state === LineState.ADD) {
+                    return lineB.state;
+                }
+
+                if ((lineA.state === LineState.MOD) || (lineB.state === LineState.MOD)) {
+                    return LineState.MOD;
+                }
+
+                return LineState.CONTEXT;
+            }   // detectNextState()
+
+            if (bufferEmpty()) {
+                return;
+            }
+
+            let tb = document.createElement("table");
+            while ((sideA.length > 0) || (sideB.length > 0)) {
+                processState(tb, detectNextState());
+            }
+            tb.setAttribute("class", "result_table");
+
+            appendFileList(node, fileName);
+            node.appendChild(tb);
+        }   // renderFile()
+
+        // Parse the diff generated by Cisco acme/cctools
+        // Supports common context diff format as well
+        function contextDiffParser(diff, node) {
+            // Patch file parser STM states
+            const State = {
+                META: 1,  // meta (Index: xxx, ***, etc)
+                ORG : 2,  // original file (sideA)
+                NEW : 3,  // new file (sideB)
+            };
+
+            let state = State.META;
+
+            // push line to the correct side by current parser FSM state
+            function pushLine(lineText, lineState) {
+                if (lineState === LineState.SEC_TITLE) {
+                    pushLineTo(sideA, lineText, lineState);
+                    return;
+                }
+
+                switch (state) {
+                case State.ORG:
+                    pushLineTo(sideA, lineText, lineState);
+                    break;
+                case State.NEW:
+                    pushLineTo(sideB, lineText, lineState);
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            let lines = diff.split("\n");
+            let fileName = "";
+            let fileNameSrc = "";   // Where the file name from
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                let result;
+
+                // - xxxxx (removed lines)
+                if (((result = /^- ([^\n]*)/.exec(line)) != null)
+                    || ((result = /^-($)/.exec(line)) != null)) {
+                    pushLine(result[1], LineState.DEL);
+                    continue;
+                }
+
+                // + xxxxx (added lines)
+                if (((result = /^\+ ([^\n]*)/.exec(line)) != null)
+                    || ((result = /^\+($)/.exec(line)) != null)) {
+                    pushLine(result[1], LineState.ADD);
+                    continue;
+                }
+
+                // ! xxxxx (modified lines)
+                if (((result = /^! ([^\n]*)/.exec(line)) != null)
+                    || ((result = /^!($)/.exec(line)) != null)) {
+                    pushLine(result[1], LineState.MOD);
+                    continue;
+                }
+
+                // *** 5,20 **** (sideA line number,count)
+                if ((result = /^\*{3} ([0-9]+[0-9,]*) \*{3}/.exec(line)) != null) {
+                    state = State.ORG;
+                    pushLine(result[1], LineState.SPLIT);
+                    continue;
+                }
+
+                // --- 11,20 ---- (sideB line number,count)
+                if ((result = /^-{3} ([0-9]+[0-9,]*) -{3}/.exec(line)) != null) {
+                    state = State.NEW;
+                    pushLine(result[1], LineState.SPLIT);
+                    continue;
+                }
+
+                // For indexed diff:
+                // Index: filename
+                //
+                // For unified diff filename:
+                // *** /path/to/original
+                // --- /path/to/new
+                if (((result = /^Index: ([^\n]*)/.exec(line)) != null)
+                    || ((result = /^\*{3} ([^\n]*)/.exec(line)) != null)
+                    || ((result = /^-{3} ([^\n]*)/.exec(line)) != null)) {
+
+                    if (!bufferEmpty()) {
+                        // this should be the file split
+                        renderFile(fileName, node);
+                        fileName = "";
+                        fileNameSrc = "";
+                    }
+
+                    // if we have not got the file name yet, or the previous file name
+                    // was parsed from the same source (index/left/right), and current
+                    // file name is valid, use it.
+                    if (((fileName === "") || (fileNameSrc === line.charAt(0)))
+                        && (result[1] !== "")
+                        && (result[1] !== "/dev/null")) {
+                        fileName = result[1];
+                        fileNameSrc = line.charAt(0);
+                    }
+
+                    state = State.META;
+                    continue;
+                }
+
+                // context lines
+                if (((result = /^ {2}([^\n]*)/.exec(line)) != null)
+                    || ((result = /^ ($)/.exec(line)) != null)) {
+                    pushLine(result[1], LineState.CONTEXT);
+                    continue;
+                }
+
+                // *************** (optional section title)
+                if ((result = /^\*{15} ([^\n]*)/.exec(line)) != null) {
+                    pushLine(result[1], LineState.SEC_TITLE);
+                    continue;
+                }
+
+                state = State.META;
+            }
+
+            // for last file
+            renderFile(fileName, node);
+        }   // contextDiffParser()
+
+        // Parse the diff generated by git
+        // Supports common unified diff format as well
+        function unifiedDiffParser(diff, node) {
+            // Patch file parser STM states
+            const State = {
+                META: 1,  // meta (Index: xxx, +++, ---, etc)
+                DIFF: 2,  // valid diff (incl. @@, +, -, etc)
+            };
+
+            // Substate for diff part
+            const DiffState = {
+                NA : 0,  // not in State.DIFF
+                CTX: 1,  // context lines
+                ADD: 2,  // +xxxxx
+                DEL: 3,  // -xxxxx
+                MOD: 4,  // modified block (- block followed by a + block)
+            };
+
+            let state = State.META, subState = DiffState.NA;
+
+            // Push buffered - block to sideA with final block property
+            function pushDels(endDel, isModify) {
+                if (lastDel === -1) {
+                    return;
+                }
+
+                for (let i = lastDel; i < endDel; i++) {
+                    if (lines[i].charAt(0) === "-") {
+                        pushLineTo(sideA, lines[i].substring(1), (isModify ? LineState.MOD : LineState.DEL));
+                    }
+                }
+                lastDel = -1;
+            }
+
+            // Set the substate of parser STM. Will push buffered del block to file buffer
+            // when needed, or just update the del block start line.
+            function setSubState(newSubState, currLine) {
+                if (subState === newSubState) {
+                    return;
+                }
+
+                if (subState === DiffState.DEL) {
+                    pushDels(currLine, (newSubState === DiffState.MOD));
+                } else if ((state === State.DIFF) && (newSubState === DiffState.DEL)) {
+                    lastDel = currLine;
+                }
+                subState = newSubState;
+            }
+
+            let lines = diff.split("\n");
+            let fileName = "";
+            let fileNameSrc = "";   // Where the file name from
+            let lastDel = -1;
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                let result;
+
+                // For indexed diff:
+                // Index: filename
+                //
+                // For git diff:
+                // diff --git a/filepath b/filepath
+                //
+                // For unified diff filename:
+                // --- /path/to/original ''timestamp''
+                // +++ /path/to/new ''timestamp''
+                if (((result = /^Index: ([^\n]*)/.exec(line)) != null)
+                    || ((result = /^diff --git .*? b\/([^\n]*)/.exec(line)) != null)
+                    || ((state === State.META) // avoid conflict with the real +/- lines
+                        && (((result = /^-{3} ([^\n]*)/.exec(line)) != null)
+                            || ((result = /^\+{3} ([^\n]*)/.exec(line)) != null)))) {
+
+                    setSubState(DiffState.NA, i);
+
+                    if (!bufferEmpty()) {
+                        // this should be the file split
+                        renderFile(fileName, node);
+                        fileName = "";
+                        fileNameSrc = "";
+                    }
+
+                    // if we have not got the file name yet, or the previous file name
+                    // was parsed from the same source (index/left/right), and current
+                    // file name is valid, use it.
+                    if (((fileName === "") || (fileNameSrc === line.charAt(0)))
+                        && (result[1] !== "")
+                        && (result[1] !== "/dev/null")) {
+                        fileName = result[1];
+                        fileNameSrc = line.charAt(0);
+                    }
+
+                    state = State.META;
+                    continue;
+                }
+
+                // -xxxxxx (removed lines)
+                if (((result = /^-([^\n]*)/.exec(line)) != null)
+                    && (state === State.DIFF)) {
+                    // the unified diff only use -/+ but no modified sign (!), so
+                    // we have to see if there is + block next to current - block.
+                    // If so, it should be rendered as modified block. We have to
+                    // cache the - lines until we know the final block property.
+                    setSubState(DiffState.DEL, i);
+                    continue;
+                }
+
+                // +xxxxx (added lines)
+                if (((result = /^\+([^\n]*)/.exec(line)) != null)
+                    && (state === State.DIFF)) {
+                    // If current + block just next to previous - block, both should be
+                    // modified blocks. Or it just a normal + block.
+                    let isModify = ((subState === DiffState.DEL)
+                                    || (subState === DiffState.MOD));
+
+                    setSubState((isModify ? DiffState.MOD : DiffState.ADD), i);
+                    pushLineTo(sideB, result[1], (isModify ? LineState.MOD : LineState.ADD));
+                    continue;
+                }
+
+                // \ No newline at end of file
+                if (((result = /^\\ ([^\n]*)/.exec(line)) != null)
+                    && (state === State.DIFF)) {
+                    continue;
+                }
+
+                // @@ -184,3 +184,41 @@ (Optional section title)
+                if ((result = /^@@ -(?<lnA>[0-9]+[0-9,]*) \+(?<lnB>[0-9]+[0-9,]*) @@ *(?<sect>[^\n]*)/.exec(line)) != null) {
+                    setSubState(DiffState.NA, i);
+                    state = State.DIFF;
+
+                    // parse section title
+                    if (result.groups.sect !== "") {
+                        pushLineTo(sideA, result.groups.sect, LineState.SEC_TITLE);
+                    }
+
+                    // parse line number,count
+                    pushLineTo(sideA, result.groups.lnA, LineState.SPLIT);
+                    pushLineTo(sideB, result.groups.lnB, LineState.SPLIT);
+                    continue;
+                }
+
+                // context lines
+                if (((result = /^ ([^\n]*)/.exec(line)) != null)
+                    && (state === State.DIFF)) {
+                    setSubState(DiffState.CTX, i);
+                    pushLineTo(sideA, result[1], LineState.CONTEXT);
+                    pushLineTo(sideB, result[1], LineState.CONTEXT);
+                    continue;
+                }
+
+                setSubState(DiffState.NA, i);
+                state = State.META;
+            }
+
+            // for last file
+            renderFile(fileName, node);
+        }   // unifiedDiffParser()
+
+        // normalize the line endings
+        diff = diff.replace(/\r\n?/g, "\n");
+
+        node.innerHTML = "";
+        if (diff.search(/(^|\n)@@ -[0-9,]+ \+[0-9,]+ @@/) !== -1) {
+            unifiedDiffParser(diff, node);
+        } else {
+            contextDiffParser(diff, node);
+        }
+
+        // Generate navigation bar and file list
+        buildFileNavigator(node, "navFile");
+    }   // diffRender()
+
+    function loadDiff(node) {
+        if (!window.FileReader) {
+            alert("This feature is not supported in this browser. \n"
+                  + "Run in Chrome/Firefox/Opera is highly recommended.");
+            return;
+        }
+
+        let files = document.getElementById("diff_file").files;
+        if (files.length === 0) {
+            alert("Please select a valid patch file.");
+            return;
+        }
+
+        let file = files[0];
+        let reader = new FileReader();
+        reader.readAsText(file);
+        reader.onload = function() {
+            diffRender(this.result, node);
+        }
+    }
+
+    </script>
+</head>
+
+<body onload = "form_diff.reset()">
+    <h2>Side-by-Side Patch Viewer v0.7</h2>
+    <form id = "form_diff">
+        <div class = "toolbar">
+            Paste your diff snippet below then
+            <button
+                type = "button"
+                onclick = "diffRender(document.getElementById('diffText').value, document.getElementById('diffResult'))">
+                START
+            </button>
+            ; or load from a file:
+            <input
+                id = "diff_file" type = "file" autocomplete = "off"
+                onchange = "loadDiff(document.getElementById('diffResult'))"/>
+
+            <div style = "padding-top: 0.3em">
+                <textarea rows = "8" id = "diffText"></textarea>
+            </div>
+        </div>
+    </form>
+
+    <div id = "diffResult" class = "context"></div>
+
+    <div>
+        <ul>
+            <li>Use the "Save As..." to save the side-by-side view of current patch.</li>
+            <li>Check the project repository for updates: <a href=https://github.com/megatops/PatchViewer>https://github.com/megatops/PatchViewer</a></li>
+            <li>For any issues please contact Ding Zhaojie (<a href = "mailto:zhaojie_ding@msn.com">zhaojie_ding@msn.com</a>).</li>
+        </ul>
+    </div>
+
+    <script>
+
+    function getColSpan(cell) {
+        // Use 1 as default value
+        return parseInt(cell.getAttribute("colspan") || 1, 10);
+    }
+
+    // Get the column index considering colspan
+    function getColumnIndex(cell) {
+        let columnIndex = 0;
+        for (const sibling of cell.parentNode.children) {
+            if (sibling === cell) {
+                break;
+            }
+            columnIndex += getColSpan(sibling);
+        }
+        return columnIndex;
+    }
+
+    // Get the column index considering colspan
+    function getCellByIndex(row, targetIndex) {
+        let columnIndex = 0;
+        for (const cell of row.children) {
+            const colspan = getColSpan(cell);
+            if (columnIndex <= targetIndex && targetIndex < columnIndex + colspan) {
+                return cell;
+            }
+            columnIndex += colspan;
+        }
+        return null;
+    }
+
+    // https://typeofnan.dev/how-to-bind-event-listeners-on-dynamically-created-elements-in-javascript/
+    // Use event bubbling to alert dynamically added elements,
+    // i.e. bind the event listener to the static parent element.
+    document.addEventListener("DOMContentLoaded", () => {
+        const diffResult = document.getElementById("diffResult");
+        diffResult.addEventListener("mousedown", (e) => {
+            const cell = e.target.closest("td");
+
+            // Ensure click is inside the table
+            if (!cell || !diffResult.contains(cell)) {
+                return;
+            }
+
+            // Make only the clicked column selectable
+            diffResult.querySelectorAll("td").forEach(cell => {
+                cell.classList.remove("selectable");
+            });
+
+            const columnIndex = getColumnIndex(cell);
+            diffResult.querySelectorAll("tr").forEach(row => {
+                const targetCell = getCellByIndex(row, columnIndex);
+                if (targetCell && !targetCell.classList.contains('diff_pad')) {
+                    targetCell.classList.add("selectable");
+                }
+            });
+        });
+    });
+
+    document.addEventListener("copy", (e) => {
+        const selection = window.getSelection();
+        if (selection.rangeCount === 0) {
+            return;
+        }
+
+        const diffResult = document.getElementById("diffResult");
+        const selectableCells = Array.from(diffResult.querySelectorAll("td.selectable"));
+
+        let selectedCells = [];
+        for (let i = 0; i < selection.rangeCount; i++) {
+            const range = selection.getRangeAt(i);
+            selectedCells = selectedCells.concat(selectableCells.filter(cell => range.intersectsNode(cell)));
+        }
+
+        // only need to handle multi-line selection
+        if (selectedCells.length <= 1) {
+            return;
+        }
+
+        // Override the clipboard content
+        e.clipboardData.setData("text/plain", selectedCells.map(cell => {
+            const preElement = cell.querySelector("pre");
+            return preElement && preElement.textContent + "\n";
+        }).join(""));
+        e.preventDefault();
+    });
+
+    </script>
+</body>
+
+</html>
