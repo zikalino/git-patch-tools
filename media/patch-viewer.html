@@ -888,60 +888,12 @@
         buildFileNavigator(node, "navFile");
     }   // diffRender()
 
-    function loadDiff(node) {
-        if (!window.FileReader) {
-            alert("This feature is not supported in this browser. \n"
-                  + "Run in Chrome/Firefox/Opera is highly recommended.");
-            return;
-        }
-
-        let files = document.getElementById("diff_file").files;
-        if (files.length === 0) {
-            alert("Please select a valid patch file.");
-            return;
-        }
-
-        let file = files[0];
-        let reader = new FileReader();
-        reader.readAsText(file);
-        reader.onload = function() {
-            diffRender(this.result, node);
-        }
-    }
-
     </script>
 </head>
 
 <body onload = "form_diff.reset()">
-    <h2>Side-by-Side Patch Viewer v0.7</h2>
-    <form id = "form_diff">
-        <div class = "toolbar">
-            Paste your diff snippet below then
-            <button
-                type = "button"
-                onclick = "diffRender(document.getElementById('diffText').value, document.getElementById('diffResult'))">
-                START
-            </button>
-            ; or load from a file:
-            <input
-                id = "diff_file" type = "file" autocomplete = "off"
-                onchange = "loadDiff(document.getElementById('diffResult'))"/>
-
-            <div style = "padding-top: 0.3em">
-                <textarea rows = "8" id = "diffText"></textarea>
-            </div>
-        </div>
-    </form>
 
     <div id = "diffResult" class = "context"></div>
-
-    <div>
-        <ul>
-            <li>Use the "Save As..." to save the side-by-side view of current patch.</li>
-            <li>Check the project repository for updates: <a href=https://github.com/megatops/PatchViewer>https://github.com/megatops/PatchViewer</a></li>
-            <li>For any issues please contact Ding Zhaojie (<a href = "mailto:zhaojie_ding@msn.com">zhaojie_ding@msn.com</a>).</li>
-        </ul>
-    </div>
 
     <script>
 
@@ -1030,6 +982,27 @@
         }).join(""));
         e.preventDefault();
     });
+
+	// Handle messages sent from the extension to the webview
+	window.addEventListener('message', event => {
+		const message = event.data; // The json data that the extension sent
+		switch (message.type) {
+			case 'update':
+				const text = message.text;
+
+				// Update our webview's content
+				//updateContent(text);
+                diffRender(text, document.getElementById('diffResult'));
+
+				// Then persist state information.
+				// This state is returned in the call to `vscode.getState` below when a webview is reloaded.
+				vscode.setState({ text });
+
+				return;
+		}
+	});
+
+
 
     </script>
 </body>
