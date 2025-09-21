@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 
 /**
  * Provider for cat scratch editors.
@@ -106,36 +108,42 @@ export class CatScratchEditorProvider implements vscode.CustomTextEditorProvider
 		// Use a nonce to whitelist which scripts can be run
 		const nonce = getNonce();
 
-		return /* html */`
-			<!DOCTYPE html>
-			<html lang="en">
-			<head>
-				<meta charset="UTF-8">
+		let htmlPath =  this.context.asAbsolutePath(path.join('media', 'patch-viewer.html'));
+		let html = fs.readFileSync(htmlPath, 'utf-8');
 
-				<!--
-				Use a content security policy to only allow loading images from https or from our extension directory,
-				and only allow scripts that have a specific nonce.
-				-->
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
 
-				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		return html; 
+		
+		// /* html */`
+		// 	<!DOCTYPE html>
+		// 	<html lang="en">
+		// 	<head>
+		// 		<meta charset="UTF-8">
 
-				<link href="${styleResetUri}" rel="stylesheet" />
-				<link href="${styleVSCodeUri}" rel="stylesheet" />
-				<link href="${styleMainUri}" rel="stylesheet" />
+		// 		<!--
+		// 		Use a content security policy to only allow loading images from https or from our extension directory,
+		// 		and only allow scripts that have a specific nonce.
+		// 		-->
+		// 		<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
 
-				<title>Cat Scratch</title>
-			</head>
-			<body>
-				<div class="notes">
-					<div class="add-button">
-						<button>Scratch!</button>
-					</div>
-				</div>
+		// 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		// 		<link href="${styleResetUri}" rel="stylesheet" />
+		// 		<link href="${styleVSCodeUri}" rel="stylesheet" />
+		// 		<link href="${styleMainUri}" rel="stylesheet" />
+
+		// 		<title>Cat Scratch</title>
+		// 	</head>
+		// 	<body>
+		// 		<div class="notes">
+		// 			<div class="add-button">
+		// 				<button>Scratch!</button>
+		// 			</div>
+		// 		</div>
 				
-				<script nonce="${nonce}" src="${scriptUri}"></script>
-			</body>
-			</html>`;
+		// 		<script nonce="${nonce}" src="${scriptUri}"></script>
+		// 	</body>
+		// 	</html>`;
 	}
 
 	/**
