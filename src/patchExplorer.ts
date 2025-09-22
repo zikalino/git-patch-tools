@@ -145,8 +145,9 @@ export class FileStat implements vscode.FileStat {
 }
 
 interface Entry {
+	name: string;
 	uri: string;
-	type: string;
+	folder: boolean;
 }
 
 //#endregion
@@ -271,23 +272,23 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 		let children: Entry[] = [];
 
-		for (let elem of this._getSubfoldersInPath('')) {
+		let parentUri = element ? element.uri : '';
+		let items = this._getItemsInPath(parentUri);
+		Object.keys(items).forEach(key => {
 			children.push(
 			{
-				uri: elem,
-				type: elem
+				name: key,
+				uri: parentUri + (parentUri !== '' ? "/" : "") + key,
+				folder: items[key]
 			});
-		};
+		});
 
-		// XXX - extract paths from the patches
-
-		
 
 		return children;
 	}
 
 	getTreeItem(element: Entry): vscode.TreeItem {
-		const treeItem = new vscode.TreeItem(element.uri, vscode.TreeItemCollapsibleState.None);
+		const treeItem = new vscode.TreeItem(element.name, element.folder ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
 		//if (element.type === vscode.FileType.File) {
 			treeItem.command = { command: 'patchEplorer.openFile', title: "Open File", arguments: [element.uri], };
 			treeItem.contextValue = 'file';
@@ -321,21 +322,22 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 		});
 	}
 
-	_getSubfoldersInPath(path: string): Set<string> {
-		let folders: Set<string> = new Set();
+	_getItemsInPath(path: string): any {
+		let folders: any = {};
 		Object.keys(this._filesDict).forEach(key => {
 			if (key.startsWith(path) && path !== key) {
 				if (path !== "") {
 					key = key.split(path + "/")[1];
 				}
-				key = key.split('/')[0]
-				folders.add(key);
+				let parts = key.split('/');
+				let expandable = (parts.length > 1);
+				key = parts[0]
+				folders[key] = expandable;
 			}
 		});
 	
 		return folders;
 	}
-
 }
 
 export class PatchEplorer {
