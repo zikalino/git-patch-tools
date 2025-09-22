@@ -269,17 +269,15 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 		this._LoadPatches();
 
-		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
-
 		let children: Entry[] = [];
 
-		Object.keys(this._filesDict).forEach(key => {
+		for (let elem of this._getSubfoldersInPath('')) {
 			children.push(
 			{
-				uri: key,
-				type: key
+				uri: elem,
+				type: elem
 			});
-		});
+		};
 
 		// XXX - extract paths from the patches
 
@@ -322,6 +320,22 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 			}
 		});
 	}
+
+	_getSubfoldersInPath(path: string): Set<string> {
+		let folders: Set<string> = new Set();
+		Object.keys(this._filesDict).forEach(key => {
+			if (key.startsWith(path) && path !== key) {
+				if (path !== "") {
+					key = key.split(path + "/")[1];
+				}
+				key = key.split('/')[0]
+				folders.add(key);
+			}
+		});
+	
+		return folders;
+	}
+
 }
 
 export class PatchEplorer {
