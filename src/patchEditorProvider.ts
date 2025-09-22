@@ -14,17 +14,15 @@ import * as fs from 'fs';
  * - Loading scripts and styles in a custom editor.
  * - Synchronizing changes between a text document and a custom editor.
  */
-export class CatScratchEditorProvider implements vscode.CustomTextEditorProvider {
+export class PatchEditorProvider implements vscode.CustomTextEditorProvider {
 
 	public static register(context: vscode.ExtensionContext): vscode.Disposable {
-		const provider = new CatScratchEditorProvider(context);
-		const providerRegistration = vscode.window.registerCustomEditorProvider(CatScratchEditorProvider.viewType, provider);
+		const provider = new PatchEditorProvider(context);
+		const providerRegistration = vscode.window.registerCustomEditorProvider(PatchEditorProvider.viewType, provider);
 		return providerRegistration;
 	}
 
 	private static readonly viewType = 'gitPatchTools.patchEditor';
-
-	private static readonly scratchCharacters = ['😸', '😹', '😺', '😻', '😼', '😽', '😾', '🙀', '😿', '🐱'];
 
 	constructor(
 		private readonly context: vscode.ExtensionContext
@@ -76,11 +74,11 @@ export class CatScratchEditorProvider implements vscode.CustomTextEditorProvider
 		webviewPanel.webview.onDidReceiveMessage(e => {
 			switch (e.type) {
 				case 'add':
-					this.addNewScratch(document);
+					// add something
 					return;
 
 				case 'delete':
-					this.deleteScratch(document, e.id);
+					// delete something
 					return;
 			}
 		});
@@ -144,70 +142,6 @@ export class CatScratchEditorProvider implements vscode.CustomTextEditorProvider
 		// 		<script nonce="${nonce}" src="${scriptUri}"></script>
 		// 	</body>
 		// 	</html>`;
-	}
-
-	/**
-	 * Add a new scratch to the current document.
-	 */
-	private addNewScratch(document: vscode.TextDocument) {
-		const json = this.getDocumentAsJson(document);
-		const character = CatScratchEditorProvider.scratchCharacters[Math.floor(Math.random() * CatScratchEditorProvider.scratchCharacters.length)];
-		json.scratches = [
-			...(Array.isArray(json.scratches) ? json.scratches : []),
-			{
-				id: getNonce(),
-				text: character,
-				created: Date.now(),
-			}
-		];
-
-		return this.updateTextDocument(document, json);
-	}
-
-	/**
-	 * Delete an existing scratch from a document.
-	 */
-	private deleteScratch(document: vscode.TextDocument, id: string) {
-		const json = this.getDocumentAsJson(document);
-		if (!Array.isArray(json.scratches)) {
-			return;
-		}
-
-		json.scratches = json.scratches.filter((note: any) => note.id !== id);
-
-		return this.updateTextDocument(document, json);
-	}
-
-	/**
-	 * Try to get a current document as json text.
-	 */
-	private getDocumentAsJson(document: vscode.TextDocument): any {
-		const text = document.getText();
-		if (text.trim().length === 0) {
-			return {};
-		}
-
-		try {
-			return JSON.parse(text);
-		} catch {
-			throw new Error('Could not get document as json. Content is not valid json');
-		}
-	}
-
-	/**
-	 * Write out the json to a given document.
-	 */
-	private updateTextDocument(document: vscode.TextDocument, json: any) {
-		const edit = new vscode.WorkspaceEdit();
-
-		// Just replace the entire document every time for this example extension.
-		// A more complete extension should compute minimal edits instead.
-		edit.replace(
-			document.uri,
-			new vscode.Range(0, 0, document.lineCount, 0),
-			JSON.stringify(json, null, 2));
-
-		return vscode.workspace.applyEdit(edit);
 	}
 }
 

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { CatScratchEditorProvider } from './catScratchEditor';
+import { PatchEditorProvider } from './patchEditorProvider';
 import { PatchEplorer } from './patchExplorer';
 
 
@@ -15,7 +15,7 @@ const cats = {
 export function activate(context: vscode.ExtensionContext) {
 
 	// Register our custom editor providers
-	context.subscriptions.push(CatScratchEditorProvider.register(context));
+	context.subscriptions.push(PatchEditorProvider.register(context));
 
 	// context.subscriptions.push(
 	// 	vscode.commands.registerCommand('gitPatchTools.start', () => {
