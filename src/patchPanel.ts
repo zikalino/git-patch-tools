@@ -22,7 +22,7 @@ export class PatchPanel {
 	 */
 	public static currentPanel: PatchPanel | undefined;
 
-	public static readonly viewType = 'gitPatchTools';
+	public static readonly viewType = 'gitPatchToolsXXX';
 
 	private readonly _panel: vscode.WebviewPanel;
 	private readonly _extensionUri: vscode.Uri;
@@ -61,7 +61,7 @@ export class PatchPanel {
 		this._context = context;
 
 		// Set the webview's initial html content
-		//this._update();
+		this._update();
 
 		// Listen for when the panel is disposed
 		// This happens when the user closes the panel or when the panel is closed programmatically
@@ -71,7 +71,7 @@ export class PatchPanel {
 		this._panel.onDidChangeViewState(
 			() => {
 				if (this._panel.visible) {
-					//this._update();
+					this._update();
 				}
 			},
 			null,
@@ -112,30 +112,11 @@ export class PatchPanel {
 		}
 	}
 
-	// private _update() {
-	// 	const webview = this._panel.webview;
+	private _update() {
+		this._panel.title = "Patches";
+		this._panel.webview.html = this._getHtmlForWebview(this._panel.webview, "xxx");
+	}
 
-	// 	// Vary the webview's content based on where it is located in the editor.
-	// 	switch (this._panel.viewColumn) {
-	// 		case vscode.ViewColumn.Two:
-	// 			this._updateForCat(webview, 'Compiling Cat');
-	// 			return;
-
-	// 		case vscode.ViewColumn.Three:
-	// 			this._updateForCat(webview, 'Testing Cat');
-	// 			return;
-
-	// 		case vscode.ViewColumn.One:
-	// 		default:
-	// 			this._updateForCat(webview, 'Coding Cat');
-	// 			return;
-	// 	}
-	// }
-
-	// private _updateForCat(webview: vscode.Webview, catName: keyof typeof cats) {
-	// 	this._panel.title = catName;
-	// 	this._panel.webview.html = this._getHtmlForWebview(webview, cats[catName]);
-	// }
 
 	private _getHtmlForWebview(webview: vscode.Webview, catGifPath: string) {
 		// Local path to main script run in the webview
