@@ -22,7 +22,7 @@ export class CatScratchEditorProvider implements vscode.CustomTextEditorProvider
 		return providerRegistration;
 	}
 
-	private static readonly viewType = 'catCustoms.catScratch';
+	private static readonly viewType = 'gitPatchTools.patchEditor';
 
 	private static readonly scratchCharacters = ['😸', '😹', '😺', '😻', '😼', '😽', '😾', '🙀', '😿', '🐱'];
 
@@ -94,7 +94,7 @@ export class CatScratchEditorProvider implements vscode.CustomTextEditorProvider
 	private getHtmlForWebview(webview: vscode.Webview): string {
 		// Local path to script and css for the webview
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(
-			this.context.extensionUri, 'media', 'catScratch.js'));
+			this.context.extensionUri, 'media', 'patchEditor.js'));
 
 		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(
 			this.context.extensionUri, 'media', 'reset.css'));
@@ -103,7 +103,7 @@ export class CatScratchEditorProvider implements vscode.CustomTextEditorProvider
 			this.context.extensionUri, 'media', 'vscode.css'));
 
 		const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(
-			this.context.extensionUri, 'media', 'catScratch.css'));
+			this.context.extensionUri, 'media', 'patchEditor.css'));
 
 		// Use a nonce to whitelist which scripts can be run
 		const nonce = getNonce();

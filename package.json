@@ -1,6 +1,6 @@
 {
-	"name": "cat-coding",
-	"description": "Cat Coding - A Webview API Sample",
+	"name": "git-patch-tools",
+	"description": "Git Patch Tools",
 	"version": "0.0.1",
 	"publisher": "vscode-samples",
 	"private": true,
@@ -16,26 +16,26 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onWebviewPanel:catCoding"
+		"onWebviewPanel:gitPatchTools"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "catCoding.start",
-				"title": "Start cat coding session",
-				"category": "Cat Coding"
+				"command": "gitPatchTools.start",
+				"title": "Start Git Patch Tools session",
+				"category": "Patch"
 			},
 			{
-				"command": "catCoding.doRefactor",
+				"command": "gitPatchTools.doRefactor",
 				"title": "Do some refactoring",
-				"category": "Cat Coding"
+				"category": "Patch"
 			}
 		],
 		"customEditors": [
         	{
-            	"viewType": "catCustoms.catScratch",
-            	"displayName": "Cat Scratch",
+            	"viewType": "gitPatchTools.patchEditor",
+            	"displayName": "Git Patch Editor",
             	"selector": [
                 	{
                     	"filenamePattern": "*.patch"

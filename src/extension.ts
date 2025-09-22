@@ -16,13 +16,13 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(CatScratchEditorProvider.register(context));
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('catCoding.start', () => {
+		vscode.commands.registerCommand('gitPatchTools.start', () => {
 			CatCodingPanel.createOrShow(context.extensionUri, context);
 		})
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('catCoding.doRefactor', () => {
+		vscode.commands.registerCommand('gitPatchTools.doRefactor', () => {
 			if (CatCodingPanel.currentPanel) {
 				CatCodingPanel.currentPanel.doRefactor();
 			}
@@ -53,7 +53,7 @@ function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
 }
 
 /**
- * Manages cat coding webview panels
+ * Manages git patch tools webview panels
  */
 class CatCodingPanel {
 	/**
@@ -61,7 +61,7 @@ class CatCodingPanel {
 	 */
 	public static currentPanel: CatCodingPanel | undefined;
 
-	public static readonly viewType = 'catCoding';
+	public static readonly viewType = 'gitPatchTools';
 
 	private readonly _panel: vscode.WebviewPanel;
 	private readonly _extensionUri: vscode.Uri;
@@ -82,7 +82,7 @@ class CatCodingPanel {
 		// Otherwise, create a new panel.
 		const panel = vscode.window.createWebviewPanel(
 			CatCodingPanel.viewType,
-			'Cat Coding',
+			'Git Patch',
 			column || vscode.ViewColumn.One,
 			getWebviewOptions(extensionUri),
 		);
@@ -214,7 +214,7 @@ class CatCodingPanel {
 		// 		<link href="${stylesResetUri}" rel="stylesheet">
 		// 		<link href="${stylesMainUri}" rel="stylesheet">
 
-		// 		<title>Cat Coding</title>
+		// 		<title>Git Patch</title>
 		// 	</head>
 		// 	<body>
 		// 		<img src="${catGifPath}" width="300" />
