@@ -267,18 +267,17 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	async getChildren(element?: Entry): Promise<Entry[]> {
 
-		// XXX - load all the patches from the folder
+		this._LoadPatches();
 
 		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
 
-  		const files = fs.readdirSync(workspaceFolder.uri.fsPath);
 		let children: Entry[] = [];
 
-		files.forEach(file => {
+		Object.keys(this._filesDict).forEach(key => {
 			children.push(
 			{
-				uri: file,
-				type: file
+				uri: key,
+				type: key
 			});
 		});
 
@@ -299,6 +298,30 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	}
 
+	private _filesDict: any = {};
+
+	_LoadPatches() {
+
+		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
+
+  		const files = fs.readdirSync(workspaceFolder.uri.fsPath);
+
+		files.forEach(file => {
+			const filePath: string = workspaceFolder.uri.fsPath + "/" + file;
+			const content: string = fs.readFileSync(filePath, 'utf-8');
+			const lines: string[] = content.split(/\r?\n/);
+
+			for (const line of lines) {
+				if (line.startsWith("--- a/")) {
+					let changePath = line.split("--- a/")[1];
+					if (!(changePath in this._filesDict)) {
+						this._filesDict[changePath] = new Set();
+					}
+					this._filesDict[changePath].add(file);
+				}
+			}
+		});
+	}
 }
 
 export class PatchEplorer {
