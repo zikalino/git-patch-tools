@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { CatScratchEditorProvider } from './catScratchEditor';
+import { PatchEplorer } from './patchExplorer';
+
 
 
 const cats = {
@@ -40,6 +42,9 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		});
 	}
+
+	new PatchEplorer(context);
+
 }
 
 function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
