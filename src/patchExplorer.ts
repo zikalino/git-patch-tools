@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 //import * as mkdirp from 'mkdirp';
 //import * as rimraf from 'rimraf';
+import { PatchPanel } from './patchPanel';
 
 //#region Utilities
 
@@ -152,7 +153,7 @@ interface Entry {
 
 //#endregion
 
-export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscode.FileSystemProvider {
+export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscode.TextDocumentContentProvider {
 
 	private _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]>;
 
@@ -297,6 +298,10 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	}
 
+	public provideTextDocumentContent(uri: vscode.Uri, _token: vscode.CancellationToken): vscode.ProviderResult<string> {
+		return "ABC " + uri;
+	}
+
 	private _filesDict: any = {};
 
 	_LoadPatches() {
@@ -344,10 +349,9 @@ export class PatchEplorer {
 	constructor(context: vscode.ExtensionContext) {
 		const treeDataProvider = new FileSystemProvider();
 		context.subscriptions.push(vscode.window.createTreeView('patchEplorer', { treeDataProvider }));
-		vscode.commands.registerCommand('patchEplorer.openFile', (resource) => this.openResource(resource));
-	}
+		vscode.commands.registerCommand('patchEplorer.openFile', (resource) => {
+			PatchPanel.createOrShow(context.extensionUri, context);
 
-	private openResource(resource: vscode.Uri): void {
-		vscode.window.showTextDocument(resource);
+		});
 	}
 }
