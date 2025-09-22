@@ -269,15 +269,22 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 		// XXX - load all the patches from the folder
 
+		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
+
+  		const files = fs.readdirSync(workspaceFolder.uri.fsPath);
+		let children: Entry[] = [];
+
+		files.forEach(file => {
+			children.push(
+			{
+				uri: file,
+				type: file
+			});
+		});
+
 		// XXX - extract paths from the patches
 
-		let children: Entry[] = [];
 		
-		children.push(
-		{
-			uri: "Blablabla",
-			type: "Mooo"
-		});
 
 		return children;
 	}
