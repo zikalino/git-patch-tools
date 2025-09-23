@@ -208,6 +208,7 @@
     function patchListRender(patches) {
         const targetDiv = document.getElementById("patchList");
 
+        patches = patches.sort((a, b) => a['name'].localeCompare(b['name']));
         let html = "";
         for (let i = 0; i < patches.length; i++) {
             html += '<div>' + patches[i]['name'] + '</div>';
