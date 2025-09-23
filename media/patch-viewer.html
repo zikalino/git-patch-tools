@@ -218,7 +218,7 @@
         targetDiv.innerHTML = html;
     }
 
-    function patchesRender(patches) {
+    function patchesRender(patches, prefix) {
 
         const targetDiv = document.getElementById("diffResult");
 
@@ -232,7 +232,7 @@
         targetDiv.innerHTML = html;
 
         for (let i = 0; i < patches.length; i++) {
-            diffRender(patches[i]['content'], document.getElementById('diffResult' + i));
+            diffRender(patches[i]['content'], document.getElementById('diffResult' + i), prefix);
         }
     }
 
@@ -1025,7 +1025,7 @@
 
                 patchListRender(message.patches);
 
-                patchesRender(message.patches);
+                patchesRender(message.patches, message['uri']);
 				// Update our webview's content
 				//updateContent(text);
 
