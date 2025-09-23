@@ -276,7 +276,7 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 		let parentUri = element ? element.uri : '';
 		let items = this._getItemsInPath(parentUri);
-		Object.keys(items).forEach(key => {
+		Object.keys(items).sort((a, b) => a.localeCompare(b)).forEach(key => {
 			children.push(
 			{
 				name: key,
