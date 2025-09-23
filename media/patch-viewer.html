@@ -989,7 +989,8 @@
 		const message = event.data; // The json data that the extension sent
 		switch (message.type) {
 			case 'update':
-				const text = message.text;
+                // just take one patch for now
+				const text = message.patches[0]['content'];
 
 				// Update our webview's content
 				//updateContent(text);

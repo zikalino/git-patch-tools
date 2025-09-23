@@ -149,6 +149,7 @@ interface Entry {
 	name: string;
 	uri: string;
 	folder: boolean;
+	patches: Set<string>;
 }
 
 //#endregion
@@ -280,7 +281,8 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 			{
 				name: key,
 				uri: parentUri + (parentUri !== '' ? "/" : "") + key,
-				folder: items[key]
+				folder: items[key]['expandable'],
+				patches: items[key]['patches']
 			});
 		});
 
@@ -291,7 +293,7 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 	getTreeItem(element: Entry): vscode.TreeItem {
 		const treeItem = new vscode.TreeItem(element.name, element.folder ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
 		//if (element.type === vscode.FileType.File) {
-			treeItem.command = { command: 'patchEplorer.openFile', title: "Open File", arguments: [element.uri], };
+			treeItem.command = { command: 'patchEplorer.openFile', title: "Open File", arguments: [element.uri, element.patches], };
 			treeItem.contextValue = 'file';
 		//}
 		return treeItem;
@@ -331,13 +333,15 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 		let folders: any = {};
 		Object.keys(this._filesDict).forEach(key => {
 			if (key.startsWith(path) && path !== key) {
+				let origKey = key;
 				if (path !== "") {
 					key = key.split(path + "/")[1];
 				}
 				let parts = key.split('/');
 				let expandable = (parts.length > 1);
 				key = parts[0]
-				folders[key] = expandable;
+				folders[key] = { expandable: expandable,
+								 patches: this._filesDict[origKey] };
 			}
 		});
 	
@@ -349,9 +353,12 @@ export class PatchEplorer {
 	constructor(context: vscode.ExtensionContext) {
 		const treeDataProvider = new FileSystemProvider();
 		context.subscriptions.push(vscode.window.createTreeView('patchEplorer', { treeDataProvider }));
-		vscode.commands.registerCommand('patchEplorer.openFile', (resource) => {
+		vscode.commands.registerCommand('patchEplorer.openFile', (uri, patches) => {
 			PatchPanel.createOrShow(context.extensionUri, context);
 
+			if (PatchPanel.currentPanel) {
+				PatchPanel.currentPanel.update(uri, patches);
+			}
 		});
 	}
 }

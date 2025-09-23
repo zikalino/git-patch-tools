@@ -98,6 +98,30 @@ export class PatchPanel {
 		this._panel.webview.postMessage({ command: 'refactor' });
 	}
 
+	public update(resource: string, patches: Set<string>) {
+
+		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
+		let loadedPatches = [];
+
+		for (let patch of patches.values()) {
+			const filePath: string = workspaceFolder.uri.fsPath + "/" + patch;
+			const content: string = fs.readFileSync(filePath, 'utf-8');
+			//const lines: string[] = content.split(/\r?\n/);
+
+			loadedPatches.push({
+				name: patch,
+				content: content
+			})
+		}
+
+		this._panel.webview.postMessage({
+			type: 'update',
+			path: resource,
+			patches: loadedPatches
+		});
+
+	}
+
 	public dispose() {
 		PatchPanel.currentPanel = undefined;
 
@@ -116,8 +140,6 @@ export class PatchPanel {
 		this._panel.title = "Patches";
 		this._panel.webview.html = getHtmlForWebview(this._panel.webview, this._extensionUri, this._context);
 	}
-
-
 }
 
 export function getNonce() {
