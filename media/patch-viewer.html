@@ -214,7 +214,26 @@
             html += '<div>' + patches[i]['name'] + '</div>';
         }
 
+        html += '<hr class="dashed"/>';
         targetDiv.innerHTML = html;
+    }
+
+    function patchesRender(patches) {
+
+        const targetDiv = document.getElementById("diffResult");
+
+        patches = patches.sort((a, b) => a['name'].localeCompare(b['name']));
+        let html = "";
+        for (let i = 0; i < patches.length; i++) {
+            html += "<h1>" + patches[i]['name'] + "</h1>";
+            html += '<div id="diffResult' + i + '"></div>';
+            html += '<hr class="dashed"/>';
+        }
+        targetDiv.innerHTML = html;
+
+        for (let i = 0; i < patches.length; i++) {
+            diffRender(patches[i]['content'], document.getElementById('diffResult' + i));
+        }
     }
 
     function diffRender(diff, node) {
@@ -1005,9 +1024,10 @@
 				const text = message.patches[0]['content'];
 
                 patchListRender(message.patches);
+
+                patchesRender(message.patches);
 				// Update our webview's content
 				//updateContent(text);
-                diffRender(text, document.getElementById('diffResult'));
 
 				// Then persist state information.
 				// This state is returned in the call to `vscode.getState` below when a webview is reloaded.
