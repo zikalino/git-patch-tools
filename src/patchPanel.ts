@@ -116,7 +116,7 @@ export class PatchPanel {
 
 		this._panel.webview.postMessage({
 			type: 'update',
-			path: resource,
+			uri: resource,
 			patches: loadedPatches
 		});
 

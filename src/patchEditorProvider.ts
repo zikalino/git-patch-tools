@@ -49,6 +49,7 @@ export class PatchEditorProvider implements vscode.CustomTextEditorProvider {
 		function updateWebview() {
 			webviewPanel.webview.postMessage({
 				type: 'update',
+				uri: '',
 				patches: [ { name: document.fileName,
 							 content: document.getText()
 				}]
