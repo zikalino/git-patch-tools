@@ -248,9 +248,12 @@
         };
 
         // insert file name to file selector
-        function appendFileList(node, fileName) {
+        function appendFileList(node, fileName, matches) {
             let title = document.createElement("span");
             title.setAttribute("class", "nav_filename");
+            if (!matches) {
+                title.style.color = "orange";
+            }
             title.appendChild(document.createTextNode((fileName === "") ? "Unknown" : fileName));
 
             let bar = document.createElement("div");
@@ -617,8 +620,9 @@
             }
             tb.setAttribute("class", "result_table");
 
-            if (fileName.startsWith(pathPrefix)) {
-                appendFileList(node, fileName);
+            let matches = fileName.startsWith(pathPrefix);
+            appendFileList(node, fileName, matches);
+            if (matches) {
                 node.appendChild(tb);
             }
         }   // renderFile()
