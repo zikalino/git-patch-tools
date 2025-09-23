@@ -340,8 +340,12 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 				let parts = key.split('/');
 				let expandable = (parts.length > 1);
 				key = parts[0]
-				folders[key] = { expandable: expandable,
-								 patches: this._filesDict[origKey] };
+				if (!(key in folders)) {
+					folders[key] = { expandable: expandable,
+									patches: this._filesDict[origKey] };
+				} else {
+					folders[key]['patches'] = new Set([...folders[key]['patches'], ...this._filesDict[origKey]]);
+				}
 			}
 		});
 	
