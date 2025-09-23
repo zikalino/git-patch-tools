@@ -204,6 +204,17 @@
     </style>
 
     <script>
+    
+    function patchListRender(patches) {
+        const targetDiv = document.getElementById("patchList");
+
+        let html = "";
+        for (let i = 0; i < patches.length; i++) {
+            html += '<div>' + patches[i]['name'] + '</div>';
+        }
+
+        targetDiv.innerHTML = html;
+    }
 
     function diffRender(diff, node) {
         // Common rendering engine STM states
@@ -892,7 +903,7 @@
 </head>
 
 <body onload = "form_diff.reset()">
-    <div>Something!!!<div>
+    <div id="patchList"></div>
 
     <div id = "diffResult" class = "context"></div>
 
@@ -992,6 +1003,7 @@
                 // just take one patch for now
 				const text = message.patches[0]['content'];
 
+                patchListRender(message.patches);
 				// Update our webview's content
 				//updateContent(text);
                 diffRender(text, document.getElementById('diffResult'));
