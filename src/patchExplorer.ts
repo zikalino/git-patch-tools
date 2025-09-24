@@ -4,7 +4,7 @@ import * as fs from 'fs';
 //import * as mkdirp from 'mkdirp';
 //import * as rimraf from 'rimraf';
 import { PatchPanel } from './patchPanel';
-import { PatchData } from './patchOperations';
+import { PatchData } from './patchData';
 const yaml = require('js-yaml');
 
 //#region Utilities
