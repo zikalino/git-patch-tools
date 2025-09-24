@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { PatchOpetations } from './patchOperations';
+import { PatchOperations } from './patchOperations';
 
 
 function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
@@ -112,7 +112,7 @@ export class PatchPanel {
 			const lines: string[] = content.split(/\r?\n/);
 			//let parsed = PatchOpetations.ParsePatch(lines);
 			//let formatted = PatchOpetations.FormatPatch(parsed);
-			let filtered_lines = PatchOpetations.FilterByPrefix(lines, resource);
+			let filtered_lines = PatchOperations.FilterByPrefix(lines, resource);
 
 
 			loadedPatches.push({

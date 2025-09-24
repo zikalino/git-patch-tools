@@ -4,7 +4,7 @@ import * as fs from 'fs';
 
 const yaml = require('js-yaml');
 
-export class PatchOpetations {
+export class PatchOperations {
 
 	public static FilterByPrefix(patch: string[], prefix: string): string[] {
 		let parsed = this.ParsePatch(patch);
