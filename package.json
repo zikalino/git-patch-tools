@@ -45,6 +45,18 @@
 				}
 			]
 		},
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "gitPatchTools.patchExtract",
+					"when": "patchPanelActive"
+				},
+				{
+					"command": "gitPatchTools.patchSplit",
+					"when": "patchPanelActive"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "gitPatchTools.start",
@@ -52,10 +64,16 @@
 				"category": "Patch"
 			},
 			{
-				"command": "gitPatchTools.doRefactor",
-				"title": "Do some refactoring",
+				"command": "gitPatchTools.patchExtract",
+				"title": "Extract",
+				"category": "Patch"
+			},
+			{
+				"command": "gitPatchTools.patchSplit",
+				"title": "Split",
 				"category": "Patch"
 			}
+
 		],
 		"customEditors": [
         	{

@@ -66,7 +66,17 @@ export class PatchPanel {
 
 		// Listen for when the panel is disposed
 		// This happens when the user closes the panel or when the panel is closed programmatically
-		this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+		this._panel.onDidDispose(() => { 
+			this.dispose();
+			vscode.commands.executeCommand('setContext',
+				'patchPanelActive',
+				false);
+		}, null, this._disposables);
+
+		vscode.commands.executeCommand('setContext',
+			'patchPanelActive',
+			this._panel.active);
+
 
 		// Update the content based on view changes
 		this._panel.onDidChangeViewState(
@@ -74,6 +84,10 @@ export class PatchPanel {
 				if (this._panel.visible) {
 					this._update();
 				}
+				vscode.commands.executeCommand('setContext',
+					'patchPanelActive',
+					this._panel.active);
+
 			},
 			null,
 			this._disposables
@@ -91,12 +105,6 @@ export class PatchPanel {
 			null,
 			this._disposables
 		);
-	}
-
-	public doRefactor() {
-		// Send a message to the webview webview.
-		// You can send any JSON serializable data.
-		this._panel.webview.postMessage({ command: 'refactor' });
 	}
 
 	public update(resource: string, patches: Set<string>, metadata: any) {

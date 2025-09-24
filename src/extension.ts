@@ -7,19 +7,17 @@ export function activate(context: vscode.ExtensionContext) {
 	// Register our custom editor providers
 	context.subscriptions.push(PatchEditorProvider.register(context));
 
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand('gitPatchTools.start', () => {
-	// 		CatCodingPanel.createOrShow(context.extensionUri, context);
-	// 	})
-	// );
+	context.subscriptions.push(
+	 	vscode.commands.registerCommand('gitPatchTools.patchExtract', () => {
+	 		//CatCodingPanel.createOrShow(context.extensionUri, context);
+	 	})
+	 );
 
-	// context.subscriptions.push(
-	// 	vscode.commands.registerCommand('gitPatchTools.doRefactor', () => {
-	// 		if (CatCodingPanel.currentPanel) {
-	// 			CatCodingPanel.currentPanel.doRefactor();
-	// 		}
-	// 	})
-	// );
+	context.subscriptions.push(
+	 	vscode.commands.registerCommand('gitPatchTools.patchSplit', () => {
+	 		//CatCodingPanel.createOrShow(context.extensionUri, context);
+	 	})
+	 );
 
 	// if (vscode.window.registerWebviewPanelSerializer) {
 	// 	// Make sure we register a serializer in activation event
