@@ -13,57 +13,17 @@ export class PatchOpetations {
 		return result;
 	}
 
-	public static SplitByPrefix(patch: string[], prefix: string): string[] {
-		let result: string[] = [];
-		let state: string = 'header';
+	public static FilterByPrefix(patch: string[], prefix: string): string[] {
+		let parsed = this.ParsePatch(patch);
 
-		let files: string[] = this.ExtractPathsFromPatch(patch, prefix);
-		for (let l in patch) {
-			if (state === 'header') {
-				result.push(l);
-				if (l === '---') {
-					state = 'files';
-				}
-			} else if (state === 'files') {
-				let parts: string[] = l.split('|');
-				if (parts.length === 2) {
-					let filename: string = parts[0].trim();
-					let matching: boolean = false;
-					if (filename.startsWith('...')) {
-						// XXX - look in the dictionary
-					} else {
-						if (filename in files) {
-							matching = true;
-						}
-					}
-
-					if (matching) {
-						result.push(l);
-						// XXX - do calculations
-					}
-				} else {
-					// XXX - replace summary
-					state = 'diff-include';
-				}
-			} else if (l.startsWith('diff --git ')) {
-				// have to change switch
-				let parts = l.split(' ');
-				let filename = parts[2].substring(2);
-				if (filename in files) {
-					result.push(l);
-					state = 'diff-include';
-				} else {
-					state = 'diff-exclude';
-				}
-			} else if (state === 'diff-include') {
-				// just copy this line
-				result.push(l);
-			} else if (state === 'diff-exclude') {
-				// skip this line
+		for (let i = parsed['files'].length - 1; i >= 0 ; i--) {
+			let f = parsed['files'][i];
+			if (!f['filename'].startsWith(prefix)) {
+				parsed['files'].splice(i, 1);
 			}
 		}
 
-		return result;
+		return this.FormatPatch(parsed);
 	}
 
 	public static ExtractPathsFromPatch(patch: string[], prefix: string = ''): string[] {
@@ -82,5 +42,92 @@ export class PatchOpetations {
 		}
 
 		return Array.from(paths.values());
+	}
+
+	public static ParsePatch(patch: string[]) {
+		let parsed: any = {
+			'header': [],
+			'files': [],
+			'summary': ''
+		};
+		let state: string = 'header';
+		let fileIndex: number = -1; // we must wait for diff
+
+		for (let i = 0; i < patch.length; i++) {
+			let l = patch[i];
+			if (state === 'header') {
+				if (l === '---') {
+					state = 'files';
+				} else if (l !== '') {
+					parsed.header.push(l);
+				}
+			} else if (state === 'files') {
+				let parts: string[] = l.split('|');
+				if (parts.length === 2) {
+					let filename: string = parts[0].trim();
+					parsed['files'].push({
+						'summary': l,
+						'filename': '',
+						'patch': [],
+						'added': 0,
+						'removed': 0
+					});
+				} else {
+					// XXX - replace summary
+					parsed['summary'] = l;
+					state = 'diff';
+				}
+			} else {
+				if (l.startsWith('diff --git ')) {
+					fileIndex++;
+					let filename = l.split(' b/').pop();
+					parsed['files'][fileIndex]['filename'] = filename;
+					// XXX - we may need to handle rename
+				}
+				if (fileIndex >= 0) {
+					parsed['files'][fileIndex]['patch'].push(l);
+					if (l.startsWith('+')) {
+						parsed['files'][fileIndex]['added']++;
+					} else if (l.startsWith('-')) {
+						parsed['files'][fileIndex]['removed']++;
+					}
+				}
+
+			}
+		}
+
+		return parsed;
+	}
+
+	public static FormatPatch(patch: any): string[] {
+		let result: string[] = [];
+
+		// push header
+		for (let i = 0; i < patch['header'].length; i++) {
+			result.push(patch['header'][i]);
+		}
+
+		result.push('');
+		result.push('---');
+
+		// push summaries
+		for (let i = 0; i < patch['files'].length; i++) {
+			let f = patch['files'][i];
+			result.push(f['summary']);
+		}
+
+		// push global summary
+		result.push(patch['summary']);
+
+		// push actual changes
+		for (let i = 0; i < patch['files'].length; i++) {
+			result.push('');
+			let f = patch['files'][i];
+			for (let j = 0; j < f['patch'].length; j++) {
+				result.push(f['patch'][j]);
+			}
+		}
+
+		return result;
 	}
 }
