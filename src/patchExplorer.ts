@@ -4,6 +4,7 @@ import * as fs from 'fs';
 //import * as mkdirp from 'mkdirp';
 //import * as rimraf from 'rimraf';
 import { PatchPanel } from './patchPanel';
+const yaml = require('js-yaml');
 
 //#region Utilities
 
@@ -305,28 +306,48 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 	}
 
 	private _filesDict: any = {};
+	private _patchesDict: any = {};
 
 	_LoadPatches() {
-
 		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
 
-  		const files = fs.readdirSync(workspaceFolder.uri.fsPath);
+
+		// XXX - load patch yaml file if exists
+		const yamlFileLocation: string = workspaceFolder.uri.fsPath + "/patches.yml";
+		if (fs.existsSync(yamlFileLocation)) {
+			const fileContents = fs.readFileSync(yamlFileLocation, 'utf8');
+			this._patchesDict = yaml.load(fileContents);
+		}
+
+		// XXX - create empty structure if it doesn't
+
+
+		const files = fs.readdirSync(workspaceFolder.uri.fsPath);
 
 		files.forEach(file => {
-			const filePath: string = workspaceFolder.uri.fsPath + "/" + file;
-			const content: string = fs.readFileSync(filePath, 'utf-8');
-			const lines: string[] = content.split(/\r?\n/);
-
-			for (const line of lines) {
-				if (line.startsWith("--- a/")) {
-					let changePath = line.split("--- a/")[1];
-					if (!(changePath in this._filesDict)) {
-						this._filesDict[changePath] = new Set();
+			if (file.endsWith('.patch')) {
+				const filePath: string = workspaceFolder.uri.fsPath + "/" + file;
+				const content: string = fs.readFileSync(filePath, 'utf-8');
+				const lines: string[] = content.split(/\r?\n/);
+				if (!(file in this._patchesDict)) {
+					this._patchesDict[file] = {
+						annotations: []
 					}
-					this._filesDict[changePath].add(file);
+				}
+
+				for (const line of lines) {
+					if (line.startsWith("--- a/")) {
+						let changePath = line.split("--- a/")[1];
+						if (!(changePath in this._filesDict)) {
+							this._filesDict[changePath] = new Set();
+						}
+						this._filesDict[changePath].add(file);
+					}
 				}
 			}
 		});
+
+		fs.writeFileSync(yamlFileLocation, yaml.dump(this._patchesDict), 'utf8');
 	}
 
 	_getItemsInPath(path: string): any {
