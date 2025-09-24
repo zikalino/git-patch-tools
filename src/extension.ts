@@ -35,4 +35,3 @@ export function activate(context: vscode.ExtensionContext) {
 
 	new PatchEplorer(context);
 }
-

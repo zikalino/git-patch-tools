@@ -4,6 +4,7 @@ import * as fs from 'fs';
 //import * as mkdirp from 'mkdirp';
 //import * as rimraf from 'rimraf';
 import { PatchPanel } from './patchPanel';
+import { PatchData } from './patchOperations';
 const yaml = require('js-yaml');
 
 //#region Utilities
@@ -271,12 +272,9 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	async getChildren(element?: Entry): Promise<Entry[]> {
 
-		this._LoadPatches();
-
 		let children: Entry[] = [];
-
 		let parentUri = element ? element.uri : '';
-		let items = this._getItemsInPath(parentUri);
+		let items = PatchData.GetItemsInPath(parentUri);
 		Object.keys(items).sort((a, b) => a.localeCompare(b)).forEach(key => {
 			children.push(
 			{
@@ -296,7 +294,8 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 		//if (element.type === vscode.FileType.File) {
 			let metadata: any = {};
 			for (let value of element.patches) {
-				metadata[value] = this._patchesDict[value];
+				const patches = PatchData.GetPatchesDict();
+				metadata[value] = patches[value];
 			}
 			treeItem.command = { command: 'patchEplorer.openFile', title: "Open File", arguments: [element.uri, element.patches, metadata], };
 			treeItem.contextValue = 'file';
@@ -307,74 +306,6 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	public provideTextDocumentContent(uri: vscode.Uri, _token: vscode.CancellationToken): vscode.ProviderResult<string> {
 		return "ABC " + uri;
-	}
-
-	private _filesDict: any = {};
-	private _patchesDict: any = {};
-
-	_LoadPatches() {
-		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
-
-
-		// XXX - load patch yaml file if exists
-		const yamlFileLocation: string = workspaceFolder.uri.fsPath + "/patches.yml";
-		if (fs.existsSync(yamlFileLocation)) {
-			const fileContents = fs.readFileSync(yamlFileLocation, 'utf8');
-			this._patchesDict = yaml.load(fileContents);
-		}
-
-		// XXX - create empty structure if it doesn't
-
-
-		const files = fs.readdirSync(workspaceFolder.uri.fsPath);
-
-		files.forEach(file => {
-			if (file.endsWith('.patch')) {
-				const filePath: string = workspaceFolder.uri.fsPath + "/" + file;
-				const content: string = fs.readFileSync(filePath, 'utf-8');
-				const lines: string[] = content.split(/\r?\n/);
-				if (!(file in this._patchesDict)) {
-					this._patchesDict[file] = {
-						annotations: []
-					}
-				}
-
-				for (const line of lines) {
-					if (line.startsWith("--- a/")) {
-						let changePath = line.split("--- a/")[1];
-						if (!(changePath in this._filesDict)) {
-							this._filesDict[changePath] = new Set();
-						}
-						this._filesDict[changePath].add(file);
-					}
-				}
-			}
-		});
-
-		fs.writeFileSync(yamlFileLocation, yaml.dump(this._patchesDict), 'utf8');
-	}
-
-	_getItemsInPath(path: string): any {
-		let folders: any = {};
-		Object.keys(this._filesDict).forEach(key => {
-			if (key.startsWith(path) && path !== key) {
-				let origKey = key;
-				if (path !== "") {
-					key = key.split(path + "/")[1];
-				}
-				let parts = key.split('/');
-				let expandable = (parts.length > 1);
-				key = parts[0]
-				if (!(key in folders)) {
-					folders[key] = { expandable: expandable,
-									patches: this._filesDict[origKey] };
-				} else {
-					folders[key]['patches'] = new Set([...folders[key]['patches'], ...this._filesDict[origKey]]);
-				}
-			}
-		});
-	
-		return folders;
 	}
 }
 
