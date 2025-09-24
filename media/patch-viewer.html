@@ -210,6 +210,7 @@
 
         patches = patches.sort((a, b) => a['name'].localeCompare(b['name']));
         let html = "";
+
         for (let i = 0; i < patches.length; i++) {
             html += '<div>' + patches[i]['name'] + '</div>';
         }
@@ -225,7 +226,16 @@
         patches = patches.sort((a, b) => a['name'].localeCompare(b['name']));
         let html = "";
         for (let i = 0; i < patches.length; i++) {
-            html += "<h1>" + patches[i]['name'] + "</h1>";
+            patch = patches[i];
+            html += "<h1>" + patch['name'] + "</h1>";
+
+            if ('metadata' in patch) {
+                let metadata = patch['metadata'];
+                if ('annotations' in metadata) {
+                    html += "<div> Annotations: " + JSON.stringify(metadata['annotations']) + "</div>"
+                }
+            }
+
             html += '<div id="diffResult' + i + '"></div>';
             html += '<hr class="dashed"/>';
         }
@@ -1029,7 +1039,7 @@
                 // just take one patch for now
 				const text = message.patches[0]['content'];
 
-                patchListRender(message.patches);
+                patchListRender(message.patches, message.metadata);
 
                 patchesRender(message.patches, message['uri']);
 				// Update our webview's content

@@ -294,7 +294,11 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 	getTreeItem(element: Entry): vscode.TreeItem {
 		const treeItem = new vscode.TreeItem(element.name, element.folder ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
 		//if (element.type === vscode.FileType.File) {
-			treeItem.command = { command: 'patchEplorer.openFile', title: "Open File", arguments: [element.uri, element.patches], };
+			let metadata: any = {};
+			for (let value of element.patches) {
+				metadata[value] = this._patchesDict[value];
+			}
+			treeItem.command = { command: 'patchEplorer.openFile', title: "Open File", arguments: [element.uri, element.patches, metadata], };
 			treeItem.contextValue = 'file';
 		//}
 		return treeItem;
@@ -378,11 +382,11 @@ export class PatchEplorer {
 	constructor(context: vscode.ExtensionContext) {
 		const treeDataProvider = new FileSystemProvider();
 		context.subscriptions.push(vscode.window.createTreeView('patchEplorer', { treeDataProvider }));
-		vscode.commands.registerCommand('patchEplorer.openFile', (uri, patches) => {
+		vscode.commands.registerCommand('patchEplorer.openFile', (uri, patches, metadata) => {
 			PatchPanel.createOrShow(context.extensionUri, context);
 
 			if (PatchPanel.currentPanel) {
-				PatchPanel.currentPanel.update(uri, patches);
+				PatchPanel.currentPanel.update(uri, patches, metadata);
 			}
 		});
 	}

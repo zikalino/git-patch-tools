@@ -51,7 +51,10 @@ export class PatchEditorProvider implements vscode.CustomTextEditorProvider {
 				type: 'update',
 				uri: '',
 				patches: [ { name: document.fileName,
-							 content: document.getText()
+							 content: document.getText(),
+							 metadata: {
+							 	annotations: [ "INSERT ANNOTATIONS HERE"]
+							 }
 				}]
 			});
 		}

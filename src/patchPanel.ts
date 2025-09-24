@@ -98,7 +98,7 @@ export class PatchPanel {
 		this._panel.webview.postMessage({ command: 'refactor' });
 	}
 
-	public update(resource: string, patches: Set<string>) {
+	public update(resource: string, patches: Set<string>, metadata: any) {
 
 		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
 		let loadedPatches = [];
@@ -110,7 +110,8 @@ export class PatchPanel {
 
 			loadedPatches.push({
 				name: patch,
-				content: content
+				content: content,
+				metadata: metadata[patch]
 			})
 		}
 
