@@ -30,6 +30,10 @@ export class PatchPanel {
 	private _disposables: vscode.Disposable[] = [];
 	private _context: vscode.ExtensionContext;
 
+	private _resource: string = '';
+	private _patches: Set<string> = new Set<string>;
+	private _metadata: any;
+
 	public static createOrShow(extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
 		const column = vscode.window.activeTextEditor
 			? vscode.window.activeTextEditor.viewColumn
@@ -83,6 +87,8 @@ export class PatchPanel {
 			() => {
 				if (this._panel.visible) {
 					this._update();
+					// XXX - a kind of stupid naming
+					this.update(this._resource, this._patches, this._metadata);
 				}
 				vscode.commands.executeCommand('setContext',
 					'patchPanelActive',
@@ -108,6 +114,12 @@ export class PatchPanel {
 	}
 
 	public update(resource: string, patches: Set<string>, metadata: any) {
+
+
+		// store so we can reload later
+		this._resource = resource;
+		this._patches = patches;
+		this._metadata = metadata;
 
 		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
 		let loadedPatches = [];
@@ -135,7 +147,6 @@ export class PatchPanel {
 			uri: resource,
 			patches: loadedPatches
 		});
-
 	}
 
 	public dispose() {
