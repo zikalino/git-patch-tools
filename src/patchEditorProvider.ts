@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
+import { PatchData } from './patchOperations';
+
 import { getHtmlForWebview, getNonce } from './patchPanel';
 
 /**
@@ -47,15 +49,25 @@ export class PatchEditorProvider implements vscode.CustomTextEditorProvider {
 		webviewPanel.webview.html = getHtmlForWebview(webviewPanel.webview, this.context.extensionUri, this.context);
 
 		function updateWebview() {
+
+			let patchesDict = PatchData.GetPatchesDict();
+			var filename: any = document.fileName;
+			filename = filename.split('\\').at(-1);
+			filename = filename.split('/').at(-1); 
+
+			let patch = patchesDict[filename];
+			let annotations = patch['annotations']
+
 			webviewPanel.webview.postMessage({
 				type: 'update',
 				uri: '',
 				patches: [ { name: document.fileName,
 							 content: document.getText(),
+
 							 metadata: {
-							 	annotations: [ "INSERT ANNOTATIONS HERE"]
+								annotations: annotations
 							 }
-				}]
+							}]
 			});
 		}
 
