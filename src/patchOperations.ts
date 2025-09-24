@@ -6,13 +6,6 @@ const yaml = require('js-yaml');
 
 export class PatchOpetations {
 
-	public static MergePatches(patch1: string[], patch2: string[]): string[] {
-		let result: string[] = [];
-
-
-		return result;
-	}
-
 	public static FilterByPrefix(patch: string[], prefix: string): string[] {
 		let parsed = this.ParsePatch(patch);
 
@@ -24,6 +17,18 @@ export class PatchOpetations {
 		}
 
 		return this.FormatPatch(parsed);
+	}
+
+	public static MergePatches(patch1: string[], patch2: string[]): string[] {
+		let parsed1 = this.ParsePatch(patch1);
+		let parsed2 = this.ParsePatch(patch2);
+
+		parsed1['files'] = [...parsed1['files'], ...parsed2['files']].sort((a, b) => a['filename'].localeCompare(b['filename']));
+
+		// XXX - update header
+		// XXX - update summary
+
+		return this.FormatPatch(parsed1);
 	}
 
 	public static ExtractPathsFromPatch(patch: string[], prefix: string = ''): string[] {
