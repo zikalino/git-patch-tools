@@ -78,6 +78,9 @@ export class PatchPanel {
 			}
 		}
 
+		// add one empty line, so there's CRLF at the end
+		aggregatedPatch.push('');
+
 		// create aggregated patch file, return filename?
 		return aggregatedPatch.join('\r\n');
 	}
