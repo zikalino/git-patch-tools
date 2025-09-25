@@ -67,11 +67,8 @@ export class PatchPanel {
 		if (PatchPanel.currentPanel) {
 			let loadedPatches = PatchPanel.currentPanel._loadedPatches;
 			for (let i = 0; i < loadedPatches.length; i++) {
-				// XXX - temporary here
 				const lines: string[] = loadedPatches[i].content.split(/\r?\n/);
-				//let parsed = PatchOpetations.ParsePatch(lines);
-				//let formatted = PatchOpetations.FormatPatch(parsed);
-				let filtered_lines = PatchOperations.FilterByPrefix(lines, loadedPatches[i].resource);
+				let filtered_lines = PatchOperations.FilterByPrefix(lines, PatchPanel.currentPanel._resource);
 				if (aggregatedPatch.length === 0) {
 					aggregatedPatch = filtered_lines;
 				} else {
