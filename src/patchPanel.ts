@@ -32,6 +32,7 @@ export class PatchPanel {
 
 	private _resource: string = '';
 	private _patches: Set<string> = new Set<string>;
+	private _loadedPatches: any[] = [];
 	private _metadata: any;
 
 	public static createOrShow(extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
@@ -58,6 +59,29 @@ export class PatchPanel {
 
 	public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
 		PatchPanel.currentPanel = new PatchPanel(panel, extensionUri, context);
+	}
+
+	public static ExtractAsPatch(): string {
+
+		let aggregatedPatch: string[] = [];
+		if (PatchPanel.currentPanel) {
+			let loadedPatches = PatchPanel.currentPanel._loadedPatches;
+			for (let i = 0; i < loadedPatches.length; i++) {
+				// XXX - temporary here
+				const lines: string[] = loadedPatches[i].content.split(/\r?\n/);
+				//let parsed = PatchOpetations.ParsePatch(lines);
+				//let formatted = PatchOpetations.FormatPatch(parsed);
+				let filtered_lines = PatchOperations.FilterByPrefix(lines, loadedPatches[i].resource);
+				if (aggregatedPatch.length === 0) {
+					aggregatedPatch = filtered_lines;
+				} else {
+					PatchOperations.MergePatches(aggregatedPatch, filtered_lines);
+				}
+			}
+		}
+
+		// create aggregated patch file, return filename?
+		return aggregatedPatch.join('\r\n');
 	}
 
 	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, context: vscode.ExtensionContext) {
@@ -120,22 +144,15 @@ export class PatchPanel {
 		this._resource = resource;
 		this._patches = patches;
 		this._metadata = metadata;
+		this._loadedPatches = [];
 
 		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
-		let loadedPatches = [];
 
 		for (let patch of patches.values()) {
 			const filePath: string = workspaceFolder.uri.fsPath + "/" + patch;
 			const content: string = fs.readFileSync(filePath, 'utf-8');
 
-			// XXX - temporary here
-			const lines: string[] = content.split(/\r?\n/);
-			//let parsed = PatchOpetations.ParsePatch(lines);
-			//let formatted = PatchOpetations.FormatPatch(parsed);
-			let filtered_lines = PatchOperations.FilterByPrefix(lines, resource);
-
-
-			loadedPatches.push({
+			this._loadedPatches.push({
 				name: patch,
 				content: content,
 				metadata: metadata[patch]
@@ -145,7 +162,7 @@ export class PatchPanel {
 		this._panel.webview.postMessage({
 			type: 'update',
 			uri: resource,
-			patches: loadedPatches
+			patches: this._loadedPatches
 		});
 	}
 

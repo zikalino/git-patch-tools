@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { PatchEditorProvider } from './patchEditorProvider';
 import { PatchEplorer } from './patchExplorer';
+import { PatchPanel } from './patchPanel';
+import * as fs from 'fs';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -9,9 +11,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 	 	vscode.commands.registerCommand('gitPatchTools.patchExtract', () => {
-	 		//CatCodingPanel.createOrShow(context.extensionUri, context);
-	 	})
-	 );
+	 		// get aggregated patch
+			let patch = PatchPanel.ExtractAsPatch();
+
+			// write to file
+			const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
+			fs.writeFileSync(workspaceFolder.uri.fsPath + "/aggregated.patch", patch, 'utf-8');
+			vscode.window.showInformationMessage("New patch file saved: " + "aggregated.path");
+	}));
 
 	context.subscriptions.push(
 	 	vscode.commands.registerCommand('gitPatchTools.patchSplit', () => {
