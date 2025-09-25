@@ -5,9 +5,10 @@
 	"publisher": "vscode-samples",
 	"private": true,
 	"license": "MIT",
+	"icon": "media/patch.webp",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+		"url": "https://github.com/zikalino/git-patch-tools"
 	},
 	"engines": {
 		"vscode": "^1.100.0"
