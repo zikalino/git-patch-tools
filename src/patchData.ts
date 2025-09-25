@@ -24,6 +24,10 @@ export class PatchData {
 		return PatchData.GetInstance()._getItemsInPath(path);
 	}
 
+	public static GetPatchesForPath(path: string): Set<string> {
+		return PatchData.GetInstance()._filesDict[path];
+	}
+
 	private _filesDict: any = {};
 	private _patchesDict: any = {};
 

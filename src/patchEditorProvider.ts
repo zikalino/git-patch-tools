@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 
 import { PatchData } from './patchData';
+import { PatchPanel } from './patchPanel';
 
 import { getHtmlForWebview, getNonce } from './patchPanel';
 
@@ -94,12 +95,27 @@ export class PatchEditorProvider implements vscode.CustomTextEditorProvider {
 		webviewPanel.webview.onDidReceiveMessage(e => {
 			switch (e.type) {
 				case 'open-patch':
-					// add something
+					// open patch file
 					vscode.commands.executeCommand('vscode.open', e['name'])
 					return;
 
 				case 'open-file-summary':
-					// delete something
+					// get patches for path
+					let patches: Set<string> = PatchData.GetPatchesForPath(e['path'])
+
+					// create patches metadata
+					let metadata: any = {};
+					for (let value of patches) {
+						const patches = PatchData.GetPatchesDict();
+						metadata[value] = patches[value];
+					}
+
+					PatchPanel.createOrShow(this.context.extensionUri, this.context);
+
+					if (PatchPanel.currentPanel) {
+						PatchPanel.currentPanel.update(e['path'], patches, metadata);
+					}
+
 					return;
 			}
 		});

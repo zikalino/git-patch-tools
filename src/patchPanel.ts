@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { PatchOperations } from './patchOperations';
+import { PatchData } from './patchData';
 
 
 function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
@@ -132,7 +133,18 @@ export class PatchPanel {
 					return;
 
 				case 'open-file-summary':
-					// delete something
+					// get patches for path
+					let patches: Set<string> = PatchData.GetPatchesForPath(e['path'])
+
+					// create patches metadata
+					let metadata: any = {};
+					for (let value of patches) {
+						const patches = PatchData.GetPatchesDict();
+						metadata[value] = patches[value];
+					}
+
+					this.update(e['path'], patches, metadata);
+
 					return;
 			}
 		});
