@@ -104,6 +104,35 @@ export class PatchOperations {
 		return parsed;
 	}
 
+	public static FormatSummary(patch: any): void {
+
+		let summary: string = '';
+		if (patch['files'].length === 1) {
+			summary = " 1 file changed";
+		} else {
+			summary = " " + patch['files'].length + " files changed"
+		}
+
+		let added: number = 0;
+		let removed: number = 0;
+
+		for (let i = 0; i < patch['files'].length; i++) {
+			let file = patch['files'][i];
+			added += file['added'];
+			removed += file['removed'];
+		}
+
+		if (added > 0) {
+			summary += ", " + added + "insertion" + ((added > 1) ? "s" : "") + "(+)";
+		}
+
+		if (removed > 0) {
+			summary += ", " + removed + "deletion" + ((removed > 1) ? "s" : "") + "(+)";
+		}
+
+		patch['summary'] = summary;
+	}
+
 	public static FormatPatch(patch: any): string[] {
 		let result: string[] = [];
 
@@ -122,6 +151,7 @@ export class PatchOperations {
 		}
 
 		// push global summary
+		this.FormatSummary(patch);
 		result.push(patch['summary']);
 
 		// push actual changes
