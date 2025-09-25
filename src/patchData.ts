@@ -61,6 +61,7 @@ export class PatchData {
 				for (const line of lines) {
 					if (line.startsWith("--- a/")) {
 						let changePath = line.split("--- a/")[1];
+
 						if (!(changePath in this._filesDict)) {
 							this._filesDict[changePath] = new Set();
 						}
@@ -75,11 +76,13 @@ export class PatchData {
 
 	_getItemsInPath(path: string): any {
 		let folders: any = {};
+
 		Object.keys(this._filesDict).forEach(key => {
-			if (key.startsWith(path) && path !== key) {
+
+			if (path === '' || key.startsWith(path + '/')) {
 				let origKey = key;
 				if (path !== "") {
-					key = key.split(path + "/")[1];
+					key = key.slice(1 + path.length);
 				}
 				let parts = key.split('/');
 				let expandable = (parts.length > 1);

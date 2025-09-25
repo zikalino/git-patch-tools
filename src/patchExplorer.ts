@@ -275,14 +275,26 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 		let children: Entry[] = [];
 		let parentUri = element ? element.uri : '';
 		let items = PatchData.GetItemsInPath(parentUri);
-		Object.keys(items).sort((a, b) => a.localeCompare(b)).forEach(key => {
-			children.push(
-			{
-				name: key,
-				uri: parentUri + (parentUri !== '' ? "/" : "") + key,
-				folder: items[key]['expandable'],
-				patches: items[key]['patches']
-			});
+		Object.entries(items).sort((a, b) => {
+				let av: any = a[1];
+				let bv: any = b[1];
+				if (av['expandable'] && !bv['expandable']) {
+					return -1;
+				} else if (!av['expandable'] && bv['expandable']) {
+					return 1;
+				} else {
+					return a[0].localeCompare(b[0])
+				}
+			}).forEach(entry => {
+				let k: string = entry[0];
+				let v: any = entry[1];
+				children.push(
+				{
+					name: k,
+					uri: parentUri + (parentUri !== '' ? "/" : "") + k,
+					folder: v['expandable'],
+					patches: v['patches']
+				});
 		});
 
 
