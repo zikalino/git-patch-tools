@@ -120,18 +120,22 @@ export class PatchPanel {
 			this._disposables
 		);
 
-		// Handle messages from the webview
-		this._panel.webview.onDidReceiveMessage(
-			message => {
-				switch (message.command) {
-					case 'alert':
-						vscode.window.showErrorMessage(message.text);
-						return;
-				}
-			},
-			null,
-			this._disposables
-		);
+		// Receive message from the webview.
+		this._panel.webview.onDidReceiveMessage(e => {
+			switch (e.type) {
+				case 'open-patch':
+					// add something
+					const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
+					const filePath: string = workspaceFolder.uri.fsPath + "/" + e['path'];
+					let uri = vscode.Uri.file(filePath);
+					vscode.commands.executeCommand('vscode.open', uri);
+					return;
+
+				case 'open-file-summary':
+					// delete something
+					return;
+			}
+		});
 	}
 
 	public update(resource: string, patches: Set<string>, metadata: any) {

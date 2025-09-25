@@ -204,7 +204,10 @@
     </style>
 
     <script>
-    
+
+	// @ts-ignore
+	const vscode = acquireVsCodeApi();
+
     function patchListRender(patches) {
         const targetDiv = document.getElementById("patchList");
 
@@ -227,7 +230,11 @@
         let html = "";
         for (let i = 0; i < patches.length; i++) {
             patch = patches[i];
-            html += "<h1>" + patch['name'] + "</h1>";
+            html += `<h1><a href="#" onclick="openPatch('` +
+                                                        patch['name'].split('\\').join('\\\\') + 
+                                                        `')">` +
+                                                        patch['name'] +
+                                                        `</a></h1>`;
 
             if ('metadata' in patch) {
                 let metadata = patch['metadata'];
@@ -975,6 +982,20 @@
         return null;
     }
 
+    function openPatch(name) {
+		vscode.postMessage({
+			type: 'open-patch',
+            path: name
+		});
+    }
+
+    function openFileSummary(path) {
+		vscode.postMessage({
+			type: 'open-file-summary',
+            path: path
+		});
+    }
+
     // https://typeofnan.dev/how-to-bind-event-listeners-on-dynamically-created-elements-in-javascript/
     // Use event bubbling to alert dynamically added elements,
     // i.e. bind the event listener to the static parent element.
@@ -1042,6 +1063,7 @@
                 patchListRender(message.patches, message.metadata);
 
                 patchesRender(message.patches, message['uri']);
+
 				// Update our webview's content
 				//updateContent(text);
 

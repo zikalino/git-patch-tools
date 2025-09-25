@@ -93,11 +93,12 @@ export class PatchEditorProvider implements vscode.CustomTextEditorProvider {
 		// Receive message from the webview.
 		webviewPanel.webview.onDidReceiveMessage(e => {
 			switch (e.type) {
-				case 'add':
+				case 'open-patch':
 					// add something
+					vscode.commands.executeCommand('vscode.open', e['name'])
 					return;
 
-				case 'delete':
+				case 'open-file-summary':
 					// delete something
 					return;
 			}
