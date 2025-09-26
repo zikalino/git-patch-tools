@@ -148,6 +148,7 @@ export class FileStat implements vscode.FileStat {
 }
 
 interface Entry {
+	children: Entry[]|null;
 	name: string;
 	uri: string;
 	folder: boolean;
@@ -162,6 +163,7 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	constructor() {
 		this._onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
+		this.root = null;
 	}
 
 	get onDidChangeFile(): vscode.Event<vscode.FileChangeEvent[]> {
@@ -270,38 +272,56 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 
 	// tree data provider
 
+	private root: Entry[]|null;
+
 	async getChildren(element?: Entry): Promise<Entry[]> {
 
-		let children: Entry[] = [];
-		let parentUri = element ? element.uri : '';
-		let items = PatchData.GetItemsInPath(parentUri);
-		Object.entries(items).sort((a, b) => {
-				let av: any = a[1];
-				let bv: any = b[1];
-				if (av['expandable'] && !bv['expandable']) {
-					return -1;
-				} else if (!av['expandable'] && bv['expandable']) {
-					return 1;
-				} else {
-					return a[0].localeCompare(b[0])
-				}
-			}).forEach(entry => {
-				let k: string = entry[0];
-				let v: any = entry[1];
-				children.push(
-				{
-					name: k,
-					uri: parentUri + (parentUri !== '' ? "/" : "") + k,
-					folder: v['expandable'],
-					patches: v['patches']
-				});
-		});
+		// if children were already loaded, just return the list
+		if (element && element.children) {
+			return element.children;
+		} else {
+			let children: Entry[] = [];
+			let parentUri = element ? element.uri : '';
+			let items = PatchData.GetItemsInPath(parentUri);
+			Object.entries(items).sort((a, b) => {
+					let av: any = a[1];
+					let bv: any = b[1];
+					if (av['expandable'] && !bv['expandable']) {
+						return -1;
+					} else if (!av['expandable'] && bv['expandable']) {
+						return 1;
+					} else {
+						return a[0].localeCompare(b[0])
+					}
+				}).forEach(entry => {
+					let k: string = entry[0];
+					let v: any = entry[1];
+					children.push(
+					{
+						name: k,
+						children: null,
+						uri: parentUri + (parentUri !== '' ? "/" : "") + k,
+						folder: v['expandable'],
+						patches: v['patches'],
+						treeItem: null
+					});
+			});
 
+			if (element) {
+				element.children = children;
+			} else {
+				this.root = children;
+			}
 
-		return children;
+			return children;
+		}
 	}
 
 	getTreeItem(element: Entry): vscode.TreeItem {
+		if (element.treeItem !== null) {
+			return element.treeItem;
+		}
+
 		const treeItem = new vscode.TreeItem(element.name, element.folder ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
 		//if (element.type === vscode.FileType.File) {
 			let metadata: any = {};
@@ -310,21 +330,66 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 				metadata[value] = patches[value];
 			}
 			treeItem.command = { command: 'patchEplorer.openFile', title: "Open File", arguments: [element.uri, element.patches, metadata], };
-			treeItem.contextValue = 'file';
+			treeItem.contextValue = element.uri;
 		//}
+		element.treeItem = treeItem;
 		return treeItem;
 
 	}
 
+	// this method from vscode.TreeDataProvider interface needed to enable reveal method.
+    // logics should also be more complicated
+    getParent(element: Entry): vscode.ProviderResult<Entry>
+    {
+		let url = element.uri;
+		let parts: string[] = url.split('/')
+		parts.pop();
+		url = parts.join('/');
+		let parentEntry = this.findEntry(url);
+		if (parentEntry !== null) {
+			return parentEntry;
+		}
+		return null;
+    }
+
 	public provideTextDocumentContent(uri: vscode.Uri, _token: vscode.CancellationToken): vscode.ProviderResult<string> {
 		return "ABC " + uri;
 	}
+
+	public findEntry(path: string) {
+		if (this.root !== null) {
+			return this._findEntry(path, this.root);
+		}
+		return null;
+	}
+
+	private _findEntry(path: string, nodes: Entry[]): Entry|null {
+		for (var i = 0; i < nodes.length; i++) {
+			if (path.startsWith(nodes[i].uri)) {
+				// if it's equal, we found exact node
+				if (path === nodes[i].uri) {
+					return nodes[i];
+				}
+				let children = nodes[i].children
+				if (children !== null) {
+					// childrean are already loaded, so we can continue
+					return this._findEntry(path, children);
+				}
+				// return this entry as children not loaded yet
+				return nodes[i];
+			}
+		}
+
+		return null;
+	}
 }
 
-export class PatchEplorer {
+export class PatchExplorer {
 	constructor(context: vscode.ExtensionContext) {
-		const treeDataProvider = new FileSystemProvider();
-		context.subscriptions.push(vscode.window.createTreeView('patchEplorer', { treeDataProvider }));
+		PatchExplorer._instance = this;
+		this._treeDataProvider = new FileSystemProvider();
+		this._treeView = vscode.window.createTreeView('patchEplorer', { treeDataProvider: this._treeDataProvider });
+		context.subscriptions.push(this._treeView);
 		vscode.commands.registerCommand('patchEplorer.openFile', (uri, patches, metadata) => {
 			PatchPanel.createOrShow(context.extensionUri, context);
 
@@ -333,4 +398,28 @@ export class PatchEplorer {
 			}
 		});
 	}
+
+	public static RevealFile(path: string): void {
+		PatchExplorer._instance.revealFile(path);
+	}
+
+	public revealFile(path: string) {
+		let found: string = '';
+		// XXX - loop can't work if node is not revealed
+		//while (found !== path) {
+			// try to find deepest node currently visible
+			let entry = this._treeDataProvider.findEntry(path);
+			if (entry === null) {
+				return;
+			}
+			found = entry.uri;
+
+			// reveal this node
+			this._treeView.reveal(entry, { select: true, expand: true});
+		//}
+	}
+
+	private static _instance: PatchExplorer;
+	private _treeDataProvider: FileSystemProvider;
+	private _treeView: vscode.TreeView<Entry>;
 }

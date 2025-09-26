@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { PatchOperations } from './patchOperations';
 import { PatchData } from './patchData';
+import { PatchExplorer } from './patchExplorer';
 
 
 function getWebviewOptions(extensionUri: vscode.Uri): vscode.WebviewOptions {
@@ -147,6 +148,8 @@ export class PatchPanel {
 					}
 
 					this.update(e['path'], patches, metadata);
+
+					PatchExplorer.RevealFile(e['path'])
 
 					return;
 			}

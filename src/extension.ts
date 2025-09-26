@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { PatchEditorProvider } from './patchEditorProvider';
-import { PatchEplorer } from './patchExplorer';
+import { PatchExplorer } from './patchExplorer';
 import { PatchPanel } from './patchPanel';
 import * as fs from 'fs';
 
@@ -38,5 +38,5 @@ export function activate(context: vscode.ExtensionContext) {
 	// 	});
 	// }
 
-	new PatchEplorer(context);
+	new PatchExplorer(context);
 }
