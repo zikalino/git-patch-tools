@@ -178,8 +178,6 @@
     }
 
     .nav_link {
-        text-decoration: none;
-        color: var(--fg-normal);
         font-family: monospace;
         padding-left: 0.3em;
         padding-right: 0.3em;
@@ -208,15 +206,22 @@
 	// @ts-ignore
 	const vscode = acquireVsCodeApi();
 
-    function patchListRender(patches) {
+    function patchListRender(patches, prefix) {
         const targetDiv = document.getElementById("patchList");
 
+        let html = ``;
+
+        if (prefix !== '') {
+            html += `<h1>Summary for: ` + prefix + `</h1>`;
+        }
+
         patches = patches.sort((a, b) => a['name'].localeCompare(b['name']));
-        let html = "";
+        html += `<hr class="dashed"/><div>`;
 
         for (let i = 0; i < patches.length; i++) {
-            html += '<div>' + patches[i]['name'] + '</div>';
+            html += patches[i]['name'] + ' ';
         }
+        html += "</div>";
 
         html += '<hr class="dashed"/>';
         targetDiv.innerHTML = html;
@@ -267,18 +272,24 @@
         // insert file name to file selector
         function appendFileList(node, fileName, matches) {
             let title = document.createElement("a");
-            title.setAttribute("class", "nav_filename");
-            title.setAttribute("ref", "#");
-            title.setAttribute("onclick", "openFileSummary('" + fileName + "')")
-            if (!matches) {
-                title.style.color = "orange";
-            }
-            title.appendChild(document.createTextNode((fileName === "") ? "Unknown" : fileName));
+            //title.setAttribute("class", "nav_link");
+            //title.setAttribute("ref", "#");
+            //title.setAttribute("onclick", "openFileSummary('" + fileName + "')")
+            
+            //title.appendChild(document.createTextNode((fileName === "") ? "Unknown" : fileName));
 
             let bar = document.createElement("div");
-            bar.setAttribute("class", "nav_filename_bar");
-            bar.appendChild(title);
-
+            let style = '';
+            if (!matches) {
+                style = 'style="color: orange"';
+            }
+            
+            bar.innerHTML = `<h3><a href="#" ` + style +
+                                    ` onclick="openFileSummary('` +
+                                                        fileName + 
+                                                        `')">` +
+                                                        fileName +
+                                                        `</a></h3>`;
             node.appendChild(bar);
         }
 
@@ -1062,9 +1073,10 @@
                 // just take one patch for now
 				const text = message.patches[0]['content'];
 
-                patchListRender(message.patches, message.metadata);
+                patchListRender(message.patches, message['uri']);
 
                 patchesRender(message.patches, message['uri']);
+                window.scrollTo(0, 0);
 
 				// Update our webview's content
 				//updateContent(text);
