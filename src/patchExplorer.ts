@@ -65,24 +65,6 @@ namespace _ {
 		});
 	}
 
-	export function stat(path: string): Promise<fs.Stats> {
-		return new Promise<fs.Stats>((resolve, reject) => {
-			fs.stat(path, (error, stat) => handleResult(resolve, reject, error, stat));
-		});
-	}
-
-	export function readfile(path: string): Promise<Buffer> {
-		return new Promise<Buffer>((resolve, reject) => {
-			fs.readFile(path, (error, buffer) => handleResult(resolve, reject, error, buffer));
-		});
-	}
-
-	export function writefile(path: string, content: Buffer): Promise<void> {
-		return new Promise<void>((resolve, reject) => {
-			fs.writeFile(path, content, error => handleResult(resolve, reject, error, void 0));
-		});
-	}
-
 	export function exists(path: string): Promise<boolean> {
 		return new Promise<boolean>((resolve, reject) => {
 			fs.exists(path, exists => handleResult(resolve, reject, null, exists));
@@ -100,18 +82,6 @@ namespace _ {
 		//	mkdirp(path, error => handleResult(resolve, reject, error, void 0));
 		//});
 	//}
-
-	export function rename(oldPath: string, newPath: string): Promise<void> {
-		return new Promise<void>((resolve, reject) => {
-			fs.rename(oldPath, newPath, error => handleResult(resolve, reject, error, void 0));
-		});
-	}
-
-	export function unlink(path: string): Promise<void> {
-		return new Promise<void>((resolve, reject) => {
-			fs.unlink(path, error => handleResult(resolve, reject, error, void 0));
-		});
-	}
 }
 
 export class FileStat implements vscode.FileStat {
@@ -159,115 +129,8 @@ interface Entry {
 
 export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscode.TextDocumentContentProvider {
 
-	private _onDidChangeFile: vscode.EventEmitter<vscode.FileChangeEvent[]>;
-
 	constructor() {
-		this._onDidChangeFile = new vscode.EventEmitter<vscode.FileChangeEvent[]>();
 		this.root = null;
-	}
-
-	get onDidChangeFile(): vscode.Event<vscode.FileChangeEvent[]> {
-		return this._onDidChangeFile.event;
-	}
-
-	watch(uri: vscode.Uri, options: { recursive: boolean; excludes: string[]; }): vscode.Disposable {
-		const watcher = fs.watch(uri.fsPath, { recursive: options.recursive }, async (event, filename) => {
-			if (filename) {
-				const filepath = path.join(uri.fsPath, _.normalizeNFC(filename.toString()));
-
-				// TODO support excludes (using minimatch library?)
-
-				this._onDidChangeFile.fire([{
-					type: event === 'change' ? vscode.FileChangeType.Changed : await _.exists(filepath) ? vscode.FileChangeType.Created : vscode.FileChangeType.Deleted,
-					uri: uri.with({ path: filepath })
-				} as vscode.FileChangeEvent]);
-			}
-		});
-
-		return { dispose: () => watcher.close() };
-	}
-
-	stat(uri: vscode.Uri): vscode.FileStat | Thenable<vscode.FileStat> {
-		return this._stat(uri.fsPath);
-	}
-
-	async _stat(path: string): Promise<vscode.FileStat> {
-		return new FileStat(await _.stat(path));
-	}
-
-	readDirectory(uri: vscode.Uri): [string, vscode.FileType][] | Thenable<[string, vscode.FileType][]> {
-		return this._readDirectory(uri);
-	}
-
-	async _readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
-		const children = await _.readdir(uri.fsPath);
-
-		const result: [string, vscode.FileType][] = [];
-		for (const child of children) {
-			const stat = await this._stat(path.join(uri.fsPath, child));
-			result.push([child, stat.type]);
-		}
-
-		return Promise.resolve(result);
-	}
-
-	createDirectory(uri: vscode.Uri): void | Thenable<void> {
-		//return _.mkdir(uri.fsPath);
-	}
-
-	readFile(uri: vscode.Uri): Uint8Array | Thenable<Uint8Array> {
-		return _.readfile(uri.fsPath);
-	}
-
-	writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean; overwrite: boolean; }): void | Thenable<void> {
-		return this._writeFile(uri, content, options);
-	}
-
-	async _writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean; overwrite: boolean; }): Promise<void> {
-		const exists = await _.exists(uri.fsPath);
-		if (!exists) {
-			if (!options.create) {
-				throw vscode.FileSystemError.FileNotFound();
-			}
-
-			//await _.mkdir(path.dirname(uri.fsPath));
-		} else {
-			if (!options.overwrite) {
-				throw vscode.FileSystemError.FileExists();
-			}
-		}
-
-		return _.writefile(uri.fsPath, content as Buffer);
-	}
-
-	delete(uri: vscode.Uri, options: { recursive: boolean; }): void | Thenable<void> {
-		//if (options.recursive) {
-		//	return _.rmrf(uri.fsPath);
-		//}
-
-		return _.unlink(uri.fsPath);
-	}
-
-	rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean; }): void | Thenable<void> {
-		return this._rename(oldUri, newUri, options);
-	}
-
-	async _rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean; }): Promise<void> {
-		const exists = await _.exists(newUri.fsPath);
-		if (exists) {
-			if (!options.overwrite) {
-				throw vscode.FileSystemError.FileExists();
-			} else {
-				//await _.rmrf(newUri.fsPath);
-			}
-		}
-
-		const parentExists = await _.exists(path.dirname(newUri.fsPath));
-		if (!parentExists) {
-			//await _.mkdir(path.dirname(newUri.fsPath));
-		}
-
-		return _.rename(oldUri.fsPath, newUri.fsPath);
 	}
 
 	// tree data provider
@@ -400,19 +263,11 @@ export class PatchExplorer {
 	}
 
 	public revealFile(path: string) {
-		let found: string = '';
-		// XXX - loop can't work if node is not revealed
-		//while (found !== path) {
-			// try to find deepest node currently visible
-			let entry = this._treeDataProvider.findEntry(path);
-			if (entry === null) {
-				return;
-			}
-			found = entry.uri;
-
-			// reveal this node
-			this._treeView.reveal(entry, { select: true, expand: true});
-		//}
+		let entry = this._treeDataProvider.findEntry(path);
+		if (entry === null) {
+			return;
+		}
+		this._treeView.reveal(entry, { select: true, expand: true});
 	}
 
 	private static _instance: PatchExplorer;
