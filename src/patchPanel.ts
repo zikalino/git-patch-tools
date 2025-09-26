@@ -74,7 +74,7 @@ export class PatchPanel {
 				if (aggregatedPatch.length === 0) {
 					aggregatedPatch = filtered_lines;
 				} else {
-					PatchOperations.MergePatches(aggregatedPatch, filtered_lines);
+					aggregatedPatch = PatchOperations.MergePatches(aggregatedPatch, filtered_lines);
 				}
 			}
 		}
