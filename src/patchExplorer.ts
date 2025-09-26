@@ -280,33 +280,7 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 		if (element && element.children) {
 			return element.children;
 		} else {
-			let children: Entry[] = [];
-			let parentUri = element ? element.uri : '';
-			let items = PatchData.GetItemsInPath(parentUri);
-			Object.entries(items).sort((a, b) => {
-					let av: any = a[1];
-					let bv: any = b[1];
-					if (av['expandable'] && !bv['expandable']) {
-						return -1;
-					} else if (!av['expandable'] && bv['expandable']) {
-						return 1;
-					} else {
-						return a[0].localeCompare(b[0])
-					}
-				}).forEach(entry => {
-					let k: string = entry[0];
-					let v: any = entry[1];
-					children.push(
-					{
-						name: k,
-						children: null,
-						uri: parentUri + (parentUri !== '' ? "/" : "") + k,
-						folder: v['expandable'],
-						patches: v['patches'],
-						treeItem: null
-					});
-			});
-
+			let children = this._loadChildren(element ? element.uri: '');
 			if (element) {
 				element.children = children;
 			} else {
@@ -318,10 +292,6 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 	}
 
 	getTreeItem(element: Entry): vscode.TreeItem {
-		if (element.treeItem !== null) {
-			return element.treeItem;
-		}
-
 		const treeItem = new vscode.TreeItem(element.name, element.folder ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
 		//if (element.type === vscode.FileType.File) {
 			let metadata: any = {};
@@ -332,7 +302,6 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 			treeItem.command = { command: 'patchEplorer.openFile', title: "Open File", arguments: [element.uri, element.patches, metadata], };
 			treeItem.contextValue = element.uri;
 		//}
-		element.treeItem = treeItem;
 		return treeItem;
 
 	}
@@ -363,6 +332,34 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 		return null;
 	}
 
+	private _loadChildren(parentUri: string) {
+		let children: Entry[] = [];
+		let items = PatchData.GetItemsInPath(parentUri);
+		Object.entries(items).sort((a, b) => {
+				let av: any = a[1];
+				let bv: any = b[1];
+				if (av['expandable'] && !bv['expandable']) {
+					return -1;
+				} else if (!av['expandable'] && bv['expandable']) {
+					return 1;
+				} else {
+					return a[0].localeCompare(b[0])
+				}
+			}).forEach(entry => {
+				let k: string = entry[0];
+				let v: any = entry[1];
+				children.push(
+				{
+					name: k,
+					children: null,
+					uri: parentUri + (parentUri !== '' ? "/" : "") + k,
+					folder: v['expandable'],
+					patches: v['patches'],
+				});
+		});
+		return children;
+	}
+
 	private _findEntry(path: string, nodes: Entry[]): Entry|null {
 		for (var i = 0; i < nodes.length; i++) {
 			if (path.startsWith(nodes[i].uri)) {
@@ -370,16 +367,15 @@ export class FileSystemProvider implements vscode.TreeDataProvider<Entry>, vscod
 				if (path === nodes[i].uri) {
 					return nodes[i];
 				}
-				let children = nodes[i].children
-				if (children !== null) {
-					// childrean are already loaded, so we can continue
-					return this._findEntry(path, children);
+				let children = nodes[i].children;
+
+				if (children === null) {
+					children = this._loadChildren(nodes[i].uri);
+					nodes[i].children = children;
 				}
-				// return this entry as children not loaded yet
-				return nodes[i];
+				return this._findEntry(path, children);
 			}
 		}
-
 		return null;
 	}
 }
