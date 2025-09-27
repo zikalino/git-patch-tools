@@ -1,17 +1,26 @@
-import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
-
 const yaml = require('js-yaml');
 
 export class PatchOperations {
 
-	public static FilterByPrefix(patch: string[], prefix: string): string[] {
+	public static Patch_RemoveOtherFiles(patch: string[], prefix: string): string[] {
 		let parsed = this.ParsePatch(patch);
 
 		for (let i = parsed['files'].length - 1; i >= 0 ; i--) {
 			let f = parsed['files'][i];
 			if (!f['filename'].startsWith(prefix)) {
+				parsed['files'].splice(i, 1);
+			}
+		}
+
+		return this.FormatPatch(parsed);
+	}
+
+	public static Patch_RemoveMatchingFiles(patch: string[], prefix: string): string[] {
+		let parsed = this.ParsePatch(patch);
+
+		for (let i = parsed['files'].length - 1; i >= 0 ; i--) {
+			let f = parsed['files'][i];
+			if (f['filename'].startsWith(prefix)) {
 				parsed['files'].splice(i, 1);
 			}
 		}
@@ -123,11 +132,11 @@ export class PatchOperations {
 		}
 
 		if (added > 0) {
-			summary += ", " + added + "insertion" + ((added > 1) ? "s" : "") + "(+)";
+			summary += ", " + added + " insertion" + ((added > 1) ? "s" : "") + "(+)";
 		}
 
 		if (removed > 0) {
-			summary += ", " + removed + "deletion" + ((removed > 1) ? "s" : "") + "(+)";
+			summary += ", " + removed + " deletion" + ((removed > 1) ? "s" : "") + "(+)";
 		}
 
 		patch['summary'] = summary;

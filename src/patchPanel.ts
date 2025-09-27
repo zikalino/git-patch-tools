@@ -70,7 +70,7 @@ export class PatchPanel {
 			let loadedPatches = PatchPanel.currentPanel._loadedPatches;
 			for (let i = 0; i < loadedPatches.length; i++) {
 				const lines: string[] = loadedPatches[i].content.split(/\r?\n/);
-				let filtered_lines = PatchOperations.FilterByPrefix(lines, PatchPanel.currentPanel._resource);
+				let filtered_lines = PatchOperations.Patch_RemoveOtherFiles(lines, PatchPanel.currentPanel._resource);
 				if (aggregatedPatch.length === 0) {
 					aggregatedPatch = filtered_lines;
 				} else {
