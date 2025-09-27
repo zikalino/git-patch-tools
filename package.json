@@ -56,6 +56,12 @@
 					"command": "gitPatchTools.patchSplit",
 					"when": "patchPanelActive"
 				}
+			],
+			"explorer/context": [
+				{
+					"command": "gitPatchTools.patchesMerge",
+					"when": "listMultiSelection"
+				}
 			]
 		},
 		"commands": [
@@ -72,6 +78,11 @@
 			{
 				"command": "gitPatchTools.patchSplit",
 				"title": "Split",
+				"category": "Patch"
+			},
+			{
+				"command": "gitPatchTools.patchesMerge",
+				"title": "Merge Patches",
 				"category": "Patch"
 			}
 

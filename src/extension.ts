@@ -3,6 +3,7 @@ import { PatchEditorProvider } from './patchEditorProvider';
 import { PatchExplorer } from './patchExplorer';
 import { PatchPanel } from './patchPanel';
 import * as fs from 'fs';
+import { PatchOperations } from './patchOperations';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -18,6 +19,30 @@ export function activate(context: vscode.ExtensionContext) {
 			const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
 			fs.writeFileSync(workspaceFolder.uri.fsPath + "/aggregated.patch", patch, 'utf-8');
 			vscode.window.showInformationMessage("New patch file saved: " + "aggregated.path");
+	}));
+
+	context.subscriptions.push(
+	 	vscode.commands.registerCommand('gitPatchTools.patchesMerge', (item, selection) => {
+			const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
+			let mergedPatch: string[]|null = null;
+
+			for (let i = 0; i < selection.length; i++) {
+				let patch = fs.readFileSync(selection[i].fsPath, 'utf-8');
+				let patchLines = patch.split(/\r?\n/);
+				if (mergedPatch === null) {
+					mergedPatch = patchLines;
+				} else {
+					mergedPatch = PatchOperations.MergePatches(mergedPatch, patchLines);
+				}
+			}
+
+			// add one empty line, so there's CRLF at the end
+			if (mergedPatch !== null) {
+				mergedPatch.push('');
+
+			fs.writeFileSync(workspaceFolder.uri.fsPath + "/aggregated.patch", mergedPatch.join('\r\n'), 'utf-8');
+			vscode.window.showInformationMessage("New patch file saved: " + "aggregated.path");
+		}
 	}));
 
 	context.subscriptions.push(
