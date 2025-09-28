@@ -41,14 +41,20 @@ export class PatchOperations {
 
 					// XXX - concatenate after @@@
 					parsed1['files'][i]['patch'] = [...parsed1['files'][i]['patch'], ...parsed1['files'][i + 1]['patch']];
-					parsed1['files'][i]['changes'] = [...parsed1['files'][i]['changes'], ...parsed1['files'][i + 1]['changes']];
+					parsed1['files'][i]['changes'] = [...parsed1['files'][i]['changes'], ...parsed1['files'][i + 1]['changes']].sort((a, b) => {
+						if (a['lineNumberA'] < b['lineNumberA']) {
+							return -1;
+						} else if  (a['lineNumberA'] > b['lineNumberA']) {
+							return 1;
+						} else {
+							return 0;
+						};
+				    });
 					parsed1['files'].splice(i + 1, 1);
 				}
 			}
 		}
 
-
-		// XXX - sort patches by line numbers
 		// XXX - check if patches overlap or not
 
 		return this.FormatPatch(parsed1);
@@ -118,11 +124,16 @@ export class PatchOperations {
 				}
 				if (fileIndex >= 0) {
 					if (l.startsWith('@')) {
+						let fields = l.split(' ');
+						let fieldsA = fields[1].split(',');
+						let fieldsB = fields[2].split(',');
+
+
 						change = {
-							lineNumberA: 0,
-							lineCountA: 0,
-							lineNumberB: 0,
-							lineCountB: 0,
+							lineNumberA: Math.abs(Number(fieldsA[0])),
+							lineCountA: Number(fieldsA[1]),
+							lineNumberB: Number(fieldsB[0]),
+							lineCountB: Number(fieldsB[1]),
 							lines: []
 						}
 						parsed['files'][fileIndex]['changes'].push(change)
