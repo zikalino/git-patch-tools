@@ -34,8 +34,22 @@ export class PatchOperations {
 
 		parsed1['files'] = [...parsed1['files'], ...parsed2['files']].sort((a, b) => a['filename'].localeCompare(b['filename']));
 
-		// XXX - update header
-		// XXX - update summary
+		// check for duplicates
+		if (parsed1['files'].length > 1) {
+			for (let i = parsed1['files'].length - 2; i >= 0; i--) {
+				if (parsed1['files'][i]['filename'] === parsed1['files'][i + 1]['filename']) {
+
+					// XXX - concatenate after @@@
+					parsed1['files'][i]['patch'] = [...parsed1['files'][i]['patch'], ...parsed1['files'][i + 1]['patch']];
+					parsed1['files'][i]['changes'] = [...parsed1['files'][i]['changes'], ...parsed1['files'][i + 1]['changes']];
+					parsed1['files'].splice(i + 1, 1);
+				}
+			}
+		}
+
+
+		// XXX - sort patches by line numbers
+		// XXX - check if patches overlap or not
 
 		return this.FormatPatch(parsed1);
 	}
@@ -66,6 +80,7 @@ export class PatchOperations {
 		};
 		let state: string = 'header';
 		let fileIndex: number = -1; // we must wait for diff
+		let changeIndex: number = -1;
 
 		for (let i = 0; i < patch.length; i++) {
 			let l = patch[i];
@@ -96,10 +111,20 @@ export class PatchOperations {
 					fileIndex++;
 					let filename = l.split(' b/').pop();
 					parsed['files'][fileIndex]['filename'] = filename;
+					changeIndex = -1;
+					parsed['files'][fileIndex]['changes'] = [];
 					// XXX - we may need to handle rename
 				}
 				if (fileIndex >= 0) {
-					parsed['files'][fileIndex]['patch'].push(l);
+					if (l.startsWith('@')) {
+						changeIndex++;
+						parsed['files'][fileIndex]['changes'].push([])
+					}
+					if (changeIndex < 0) {
+						parsed['files'][fileIndex]['patch'].push(l);
+					} else {
+						parsed['files'][fileIndex]['changes'][changeIndex].push(l)
+					}
 					if (l.startsWith('+')) {
 						parsed['files'][fileIndex]['added']++;
 					} else if (l.startsWith('-')) {
@@ -169,6 +194,12 @@ export class PatchOperations {
 			let f = patch['files'][i];
 			for (let j = 0; j < f['patch'].length; j++) {
 				result.push(f['patch'][j]);
+			}
+
+			for (let j = 0; j < f['changes'].length; j++) {
+				for (let k = 0; k < f['changes'][j].length; k++) {
+					result.push(f['changes'][j][k]);
+				}
 			}
 		}
 
