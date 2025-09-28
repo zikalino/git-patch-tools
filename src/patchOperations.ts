@@ -80,7 +80,7 @@ export class PatchOperations {
 		};
 		let state: string = 'header';
 		let fileIndex: number = -1; // we must wait for diff
-		let changeIndex: number = -1;
+		let change:any = null;
 
 		for (let i = 0; i < patch.length; i++) {
 			let l = patch[i];
@@ -111,19 +111,26 @@ export class PatchOperations {
 					fileIndex++;
 					let filename = l.split(' b/').pop();
 					parsed['files'][fileIndex]['filename'] = filename;
-					changeIndex = -1;
+					
+					change = null;
 					parsed['files'][fileIndex]['changes'] = [];
 					// XXX - we may need to handle rename
 				}
 				if (fileIndex >= 0) {
 					if (l.startsWith('@')) {
-						changeIndex++;
-						parsed['files'][fileIndex]['changes'].push([])
+						change = {
+							lineNumberA: 0,
+							lineCountA: 0,
+							lineNumberB: 0,
+							lineCountB: 0,
+							lines: []
+						}
+						parsed['files'][fileIndex]['changes'].push(change)
 					}
-					if (changeIndex < 0) {
+					if (change === null) {
 						parsed['files'][fileIndex]['patch'].push(l);
 					} else {
-						parsed['files'][fileIndex]['changes'][changeIndex].push(l)
+						change['lines'].push(l)
 					}
 					if (l.startsWith('+')) {
 						parsed['files'][fileIndex]['added']++;
@@ -197,8 +204,8 @@ export class PatchOperations {
 			}
 
 			for (let j = 0; j < f['changes'].length; j++) {
-				for (let k = 0; k < f['changes'][j].length; k++) {
-					result.push(f['changes'][j][k]);
+				for (let k = 0; k < f['changes'][j]['lines'].length; k++) {
+					result.push(f['changes'][j]['lines'][k]);
 				}
 			}
 		}
