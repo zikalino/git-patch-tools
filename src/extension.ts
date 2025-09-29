@@ -45,6 +45,17 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	}));
 
+
+	context.subscriptions.push(
+	 	vscode.commands.registerCommand('gitPatchTools.patchSplitByFiles', (item, selection) => {
+
+		}));
+
+	context.subscriptions.push(
+	 	vscode.commands.registerCommand('gitPatchTools.patchSplitByFolders', (item, selection) => {
+
+		}));
+
 	context.subscriptions.push(
 	 	vscode.commands.registerCommand('gitPatchTools.patchSplit', () => {
 	 		//CatCodingPanel.createOrShow(context.extensionUri, context);

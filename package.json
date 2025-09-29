@@ -61,6 +61,14 @@
 				{
 					"command": "gitPatchTools.patchesMerge",
 					"when": "listMultiSelection"
+				},
+				{
+					"command": "gitPatchTools.patchSplitIntoFiles",
+					"when": "!listMultiSelection"
+				},
+				{
+					"command": "gitPatchTools.patchSplitIntoFolders",
+					"when": "!listMultiSelection"
 				}
 			]
 		},
@@ -84,8 +92,17 @@
 				"command": "gitPatchTools.patchesMerge",
 				"title": "Merge Patches",
 				"category": "Patch"
+			},
+			{
+				"command": "gitPatchTools.patchSplitByFiles",
+				"title": "Split Patch by Files",
+				"category": "Patch"
+			},
+			{
+				"command": "gitPatchTools.patchSplitByFolders",
+				"title": "Split Patch by Folders",
+				"category": "Patch"
 			}
-
 		],
 		"customEditors": [
         	{

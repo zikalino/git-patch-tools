@@ -49,6 +49,10 @@ export class PatchData {
 
 		files.forEach(file => {
 			if (file.endsWith('.patch')) {
+
+				if (file.startsWith('chrimall')) {
+					console.log("CHRIMALL");
+				}
 				const filePath: string = workspaceFolder.uri.fsPath + "/" + file;
 				const content: string = fs.readFileSync(filePath, 'utf-8');
 				const lines: string[] = content.split(/\r?\n/);
