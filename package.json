@@ -63,11 +63,11 @@
 					"when": "listMultiSelection"
 				},
 				{
-					"command": "gitPatchTools.patchSplitIntoFiles",
+					"command": "gitPatchTools.patchSplitByFiles",
 					"when": "!listMultiSelection"
 				},
 				{
-					"command": "gitPatchTools.patchSplitIntoFolders",
+					"command": "gitPatchTools.patchSplitByFolders",
 					"when": "!listMultiSelection"
 				}
 			]

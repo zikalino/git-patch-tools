@@ -63,7 +63,8 @@ export class PatchOperations {
 	public static ExtractPathsFromPatch(patch: string[], prefix: string = ''): string[] {
 		let paths: Set<string> = new Set();
 
-		for (let l in patch) {
+		for (let i in patch) {
+			let l = patch[i];
 			let path: string = '';
 			if (l.startsWith('--- a/')) {
 				path = l.split('--- a/')[1];

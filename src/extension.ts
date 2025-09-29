@@ -48,7 +48,17 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 	 	vscode.commands.registerCommand('gitPatchTools.patchSplitByFiles', (item, selection) => {
+			const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
 
+			let patch = fs.readFileSync(item.fsPath, 'utf-8');
+			let patchLines = patch.split(/\r?\n/);
+			let paths = PatchOperations.ExtractPathsFromPatch(patchLines, '');
+			let filenamePrefix = item.fsPath.split(".patch")[0];
+
+			for (let i = 0; i < paths.length; i++) {
+				let extracted = PatchOperations.Patch_RemoveOtherFiles(patchLines, paths[i]);
+				fs.writeFileSync(filenamePrefix + "-" + i + ".patch", extracted.join('\r\n'));
+			}
 		}));
 
 	context.subscriptions.push(
