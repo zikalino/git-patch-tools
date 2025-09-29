@@ -28,6 +28,21 @@ export class PatchOperations {
 		return this.FormatPatch(parsed);
 	}
 
+	public static Patch_RemoveFilesNotInFolder(patch: string[], folder: string): string[] {
+		let parsed = this.ParsePatch(patch);
+
+		for (let i = parsed['files'].length - 1; i >= 0 ; i--) {
+			let f = parsed['files'][i];
+
+			if (!(f['filename'].startsWith(folder) &&
+			    (folder.split('/').length === (f['filename'].split('/').length - 1)))) {
+				parsed['files'].splice(i, 1);
+			}
+		}
+
+		return this.FormatPatch(parsed);
+	}
+
 	public static MergePatches(patch1: string[], patch2: string[]): string[] {
 		let parsed1 = this.ParsePatch(patch1);
 		let parsed2 = this.ParsePatch(patch2);
@@ -60,7 +75,7 @@ export class PatchOperations {
 		return this.FormatPatch(parsed1);
 	}
 
-	public static ExtractPathsFromPatch(patch: string[], prefix: string = ''): string[] {
+	public static ExtractFilePathsFromPatch(patch: string[], prefix: string = ''): string[] {
 		let paths: Set<string> = new Set();
 
 		for (let i in patch) {
@@ -73,6 +88,27 @@ export class PatchOperations {
 			}
 			if (path.startsWith(prefix)) {
 				paths.add(path);
+			}
+		}
+
+		return Array.from(paths.values());
+	}
+
+	public static ExtractFolderPathsFromPatch(patch: string[], prefix: string = ''): string[] {
+		let paths: Set<string> = new Set();
+
+		for (let i in patch) {
+			let l = patch[i];
+			let path: string = '';
+			if (l.startsWith('--- a/')) {
+				path = l.split('--- a/')[1];
+			} else if (l.startsWith('+++ b/')) {
+				path = l.split('+++ b/')[1];
+			}
+			if (path.startsWith(prefix)) {
+				let parts = path.split('/');
+				parts.pop();
+				paths.add(parts.join('/'));
 			}
 		}
 
