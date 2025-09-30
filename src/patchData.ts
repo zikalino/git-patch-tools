@@ -42,6 +42,13 @@ export class PatchData {
 			this._patchesDict = yaml.load(fileContents);
 		}
 
+		// make sure non-existing files are deleted
+		for (let k in this._patchesDict) {
+			if (!fs.existsSync(workspaceFolder.uri.fsPath + "/" + k)) {
+				delete this._patchesDict[k];
+			}
+		}
+
 		// XXX - create empty structure if it doesn't
 
 
