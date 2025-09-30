@@ -958,7 +958,7 @@
     </script>
 </head>
 
-<body onload = "form_diff.reset()">
+<body onload = "restore()">
     <div id="patchList"></div>
 
     <div id = "diffResult" class = "context"></div>
@@ -1070,24 +1070,25 @@
 		const message = event.data; // The json data that the extension sent
 		switch (message.type) {
 			case 'update':
-                // just take one patch for now
-				const text = message.patches[0]['content'];
 
-                patchListRender(message.patches, message['uri']);
+                vscode.setState({
+                    prefix: message['uri'],
+                    patches: message.patches                
+                });
 
-                patchesRender(message.patches, message['uri']);
+                restore();
                 window.scrollTo(0, 0);
-
-				// Update our webview's content
-				//updateContent(text);
-
-				// Then persist state information.
-				// This state is returned in the call to `vscode.getState` below when a webview is reloaded.
-				vscode.setState({ text });
 
 				return;
 		}
 	});
+
+    function restore() {
+        let state = vscode.getState();
+        patchListRender(state['patches'], state['prefix']);
+        patchesRender(state['patches'], state['prefix']);
+
+    }
 
     </script>
 </body>

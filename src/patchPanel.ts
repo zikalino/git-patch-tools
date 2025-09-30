@@ -111,11 +111,6 @@ export class PatchPanel {
 		// Update the content based on view changes
 		this._panel.onDidChangeViewState(
 			() => {
-				if (this._panel.visible) {
-					this._update();
-					// XXX - a kind of stupid naming
-					this.update(this._resource, this._patches, this._metadata);
-				}
 				vscode.commands.executeCommand('setContext',
 					'patchPanelActive',
 					this._panel.active);
