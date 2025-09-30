@@ -44,7 +44,7 @@ export class PatchPanel {
 
 		// If we already have a panel, show it.
 		if (PatchPanel.currentPanel) {
-			PatchPanel.currentPanel._panel.reveal(column);
+			PatchPanel.currentPanel._panel.reveal(column, true);
 			return;
 		}
 
@@ -52,7 +52,7 @@ export class PatchPanel {
 		const panel = vscode.window.createWebviewPanel(
 			PatchPanel.viewType,
 			'Git Patch',
-			column || vscode.ViewColumn.One,
+			{ viewColumn: column || vscode.ViewColumn.One, preserveFocus: true },
 			getWebviewOptions(extensionUri),
 		);
 
