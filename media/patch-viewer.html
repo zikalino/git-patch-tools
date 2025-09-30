@@ -9,17 +9,7 @@
     <style>
 
     :root {
-        /* body */
-        --fg-normal: black;
-        --bg-normal: white;
-
         /* diff color */
-        --fg-context: #606060;
-        --bg-sector: #DDDDCC;
-        --bg-add: #C0FFC0;
-        --bg-del: #FFD0D0;
-        --bg-mod: #D0D0FF;
-        --bg-pad: #EEEEEE;
 
         /* gutter */
         --fg-gutter: #999999;
@@ -37,8 +27,8 @@
     }
 
     html {
-        background-color: var(--bg-normal);
-        color: var(--fg-normal);
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-editor-foreground);
         font-family: sans-serif;
     }
 
@@ -93,9 +83,9 @@
         width: 0;
         border-right-style: solid;
         border-right-width: 0.1em;
-        border-color: var(--bg-pad);
-        background-color: var(--bg-gutter);
-        color: var(--fg-gutter);
+        border-color: var(--vscode-editor-background);
+        background-color: var(--vscode-editorGutter-background);
+        color: var(--vscode-editor-foreground);
         text-align: right;
         padding-left: 0.2em;
         padding-right: 0.2em;
@@ -117,25 +107,28 @@
     }
 
     .diff_context {
-        background-color: var(--bg-normal);
-        color: var(--fg-context);
+        background-color: var(--vscode-diffEditor-unchangedTextBackground);
+        color: var(--vscode-editor-foreground);
     }
 
     .diff_add {
-        background-color: var(--bg-add);
+        background-color:  var(--vscode-diffEditor-insertedTextBackground);
+        color: var(--vscode-editor-foreground);
     }
 
     .diff_mod {
         background-color: var(--bg-mod);
+        color: var(--vscode-editor-foreground);
     }
 
     .diff_del {
-        background-color: var(--bg-del);
-        color: var(--fg-context);
+        background-color:  var(--vscode-diffEditor-removedTextBackground);
+        color: var(--vscode-editor-foreground);
     }
 
     .diff_pad {
-        background-color: var(--bg-pad);
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-editor-foreground);
     }
 
     .diff_info {
@@ -143,8 +136,8 @@
     }
 
     .diff_split {
-        background-color: var(--bg-pad);
-        color: var(--fg-context);
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-editor-foreground);
         text-align: center;
         border-top-style: solid;
         border-top-width: 0.1em;
@@ -154,8 +147,8 @@
 
     .diff_sec_title {
         width: 100%;
-        background-color: var(--bg-sector);
-        color: var(--fg-context);
+        background-color: var(--vscode-editor-background);
+        color: var(--vscode-editor-foreground);
         font-weight: bold;
         border-top-style: solid;
         border-top-width: 0.1em;
@@ -225,7 +218,7 @@
 
         html += '<hr class="dashed"/>';
         html += `<p>Total files changed: ` + totalFilesChanged + `</p>`;
-        html += `<p>Total lines added: ` + totalLinesAdded + `</p>`;
+        html += `<p style='background-color: var(--vscode-diffEditor-insertedLineBackground)'>Total lines added: ` + totalLinesAdded + `</p>`;
         html += `<p>Total lines removed: ` + totalLinesRemoved + `</p>`;
 
         html += '<hr class="dashed"/>';
@@ -247,10 +240,21 @@
                                                         patch['name'] +
                                                         `</a></h1>`;
 
+            let contentLines = patches[i]['content'].split(/\r?\n/);
+            for (let i = 0; i < contentLines.length; i++) {
+                if (contentLines[i] === '') break;
+                html += "<p>" + contentLines[i] + "</p>";
+            }
+
+            
+
             if ('metadata' in patch) {
                 let metadata = patch['metadata'];
-                if ('annotations' in metadata) {
-                    html += "<div> Annotations: " + JSON.stringify(metadata['annotations']) + "</div>"
+                if ('annotations' in metadata && metadata['annotations'].length > 0) {
+                    html += "<p> Annotations:</p>"
+                    for (let i = 0; i < metadata['annotations'].length; i++) {
+                        html += "<p>" + metadata['annotations'][i] +  "</p>"
+                    }
                 }
             }
 
@@ -420,7 +424,11 @@
                     td.setAttribute("class", "diff_basic diff_pad");
                     td.setAttribute("colspan", "2");
                 } else {
-                    td.setAttribute("class", "diff_basic diff_mod");
+                    if (isSideB) {
+                        td.setAttribute("class", "diff_basic diff_add");
+                    } else {
+                        td.setAttribute("class", "diff_basic diff_del");
+                    }
                 }
                 break;
 
