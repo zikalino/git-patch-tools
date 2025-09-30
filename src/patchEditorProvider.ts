@@ -4,6 +4,7 @@ import * as fs from 'fs';
 
 import { PatchData } from './patchData';
 import { PatchPanel } from './patchPanel';
+import { PatchOperations } from './patchOperations';
 
 import { getHtmlForWebview, getNonce } from './patchPanel';
 
@@ -59,16 +60,27 @@ export class PatchEditorProvider implements vscode.CustomTextEditorProvider {
 			let patch = patchesDict[filename];
 			let annotations = patch['annotations']
 
+
+			let content = document.getText();
+			let stats: any = PatchOperations.Patch_GetStatistics(content.split(/\r?\n/), '');
+			let totalFilesChanged = stats['totalFilesChanged'];
+			let totalLinesAdded = stats['totalLinesAdded'];
+			let totalLinesRemoved = stats['totalLinesRemoved'];
+
+
 			webviewPanel.webview.postMessage({
 				type: 'update',
 				uri: '',
-				patches: [ { name: document.fileName,
+				patches: [ { name: filename,
 							 content: document.getText(),
 
 							 metadata: {
 								annotations: annotations
 							 }
-							}]
+							}],
+				totalFilesChanged: totalFilesChanged,
+				totalLinesAdded: totalLinesAdded,
+				totalLinesRemoved: totalLinesRemoved
 			});
 		}
 
