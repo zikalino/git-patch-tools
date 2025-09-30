@@ -206,7 +206,7 @@
 	// @ts-ignore
 	const vscode = acquireVsCodeApi();
 
-    function patchListRender(patches, prefix) {
+    function patchListRender(patches, prefix, totalFilesChanged, totalLinesAdded, totalLinesRemoved) {
         const targetDiv = document.getElementById("patchList");
 
         let html = ``;
@@ -224,6 +224,12 @@
         html += "</div>";
 
         html += '<hr class="dashed"/>';
+        html += `<p>Total files changed: ` + totalFilesChanged + `</p>`;
+        html += `<p>Total lines added: ` + totalLinesAdded + `</p>`;
+        html += `<p>Total lines removed: ` + totalLinesRemoved + `</p>`;
+
+        html += '<hr class="dashed"/>';
+
         targetDiv.innerHTML = html;
     }
 
@@ -1073,7 +1079,10 @@
 
                 vscode.setState({
                     prefix: message['uri'],
-                    patches: message.patches                
+                    patches: message.patches,
+                    totalFilesChanged: message['totalFilesChanged'],
+                    totalLinesAdded: message['totalLinesAdded'],
+                    totalLinesRemoved: message['totalLinesRemoved']
                 });
 
                 restore();
@@ -1085,7 +1094,11 @@
 
     function restore() {
         let state = vscode.getState();
-        patchListRender(state['patches'], state['prefix']);
+        patchListRender(state['patches'],
+                        state['prefix'],
+                        state['totalFilesChanged'],
+                        state['totalLinesAdded'],
+                        state['totalLinesRemoved']);
         patchesRender(state['patches'], state['prefix']);
 
     }

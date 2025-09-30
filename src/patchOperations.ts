@@ -2,6 +2,28 @@ const yaml = require('js-yaml');
 
 export class PatchOperations {
 
+	public static Patch_GetStatistics(patch: string[], prefix: string) {
+		let parsed = this.ParsePatch(patch);
+		let fileCount = 0;
+		let linesAdded = 0;
+		let linesRemoved = 0;
+
+		for (let i = parsed['files'].length - 1; i >= 0 ; i--) {
+			let f = parsed['files'][i];
+			if (!f['filename'].startsWith(prefix)) {
+				fileCount++;
+				linesAdded += f['added'];
+				linesRemoved += f['removed'];				
+			}
+		}
+
+		return {
+			totalFilesChanged: fileCount,
+			totalLinesAdded: linesAdded,
+			totalLinesRemoved: linesRemoved
+		};
+	}
+
 	public static Patch_RemoveOtherFiles(patch: string[], prefix: string): string[] {
 		let parsed = this.ParsePatch(patch);
 

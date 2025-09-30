@@ -151,7 +151,9 @@ export class PatchPanel {
 		});
 	}
 
-	public update(resource: string, patches: Set<string>, metadata: any) {
+	public update(resource: string,
+		          patches: Set<string>,
+				  metadata: any) {
 
 
 		// store so we can reload later
@@ -162,6 +164,11 @@ export class PatchPanel {
 
 		const workspaceFolder = (vscode.workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file')[0];
 
+		let totalFilesChanged = 0;
+		let totalLinesAdded = 0;
+		let totalLinesRemoved = 0;
+
+
 		for (let patch of patches.values()) {
 			const filePath: string = workspaceFolder.uri.fsPath + "/" + patch;
 			const content: string = fs.readFileSync(filePath, 'utf-8');
@@ -171,12 +178,21 @@ export class PatchPanel {
 				content: content,
 				metadata: metadata[patch]
 			})
+
+			// calculate statistics
+			let stats: any = PatchOperations.Patch_GetStatistics(content.split(/\r?\n/), resource);
+			totalFilesChanged += stats['totalFilesChanged'];
+			totalLinesAdded += stats['totalLinesAdded'];
+			totalLinesRemoved += stats['totalLinesRemoved'];
 		}
 
 		this._panel.webview.postMessage({
 			type: 'update',
 			uri: resource,
-			patches: this._loadedPatches
+			patches: this._loadedPatches,
+			totalFilesChanged: totalFilesChanged,
+			totalLinesAdded: totalLinesAdded,
+			totalLinesRemoved: totalLinesRemoved
 		});
 	}
 
