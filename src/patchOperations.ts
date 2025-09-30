@@ -201,11 +201,11 @@ export class PatchOperations {
 						parsed['files'][fileIndex]['patch'].push(l);
 					} else {
 						change['lines'].push(l)
-					}
-					if (l.startsWith('+')) {
-						parsed['files'][fileIndex]['added']++;
-					} else if (l.startsWith('-')) {
-						parsed['files'][fileIndex]['removed']++;
+						if (l.startsWith('+')) {
+							parsed['files'][fileIndex]['added']++;
+						} else if (l.startsWith('-')) {
+							parsed['files'][fileIndex]['removed']++;
+						}
 					}
 				}
 
