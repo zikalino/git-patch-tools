@@ -10,7 +10,7 @@ export class PatchOperations {
 
 		for (let i = parsed['files'].length - 1; i >= 0 ; i--) {
 			let f = parsed['files'][i];
-			if (!f['filename'].startsWith(prefix)) {
+			if (f['filename'].startsWith(prefix)) {
 				fileCount++;
 				linesAdded += f['added'];
 				linesRemoved += f['removed'];				
