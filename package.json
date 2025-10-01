@@ -1,8 +1,8 @@
 {
-	"name": "git-patch-tools",
-	"description": "Git Patch Tools",
+	"name": "Git Patch Viewer",
+	"description": "Git Viewer and Tools",
 	"version": "0.0.1",
-	"publisher": "vscode-samples",
+	"publisher": "Zim",
 	"private": true,
 	"license": "MIT",
 	"icon": "media/patch.webp",
