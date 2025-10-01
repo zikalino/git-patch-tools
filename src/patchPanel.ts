@@ -186,6 +186,7 @@ export class PatchPanel {
 			totalLinesRemoved += stats['totalLinesRemoved'];
 		}
 
+		this._panel.title = "Patches: " + resource;
 		this._panel.webview.postMessage({
 			type: 'update',
 			uri: resource,
@@ -247,29 +248,4 @@ export function getHtmlForWebview(webview: vscode.Webview, extensionUri: vscode.
 	let html = fs.readFileSync(htmlPath, 'utf-8');
 	
 	return html;
-	//`<!DOCTYPE html>
-	// 	<html lang="en">
-	// 	<head>
-	// 		<meta charset="UTF-8">
-
-	// 		<!--
-	// 			Use a content security policy to only allow loading images from https or from our extension directory,
-	// 			and only allow scripts that have a specific nonce.
-	// 		-->
-	// 		<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}';">
-
-	// 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-	// 		<link href="${stylesResetUri}" rel="stylesheet">
-	// 		<link href="${stylesMainUri}" rel="stylesheet">
-
-	// 		<title>Git Patch</title>
-	// 	</head>
-	// 	<body>
-	// 		<img src="${catGifPath}" width="300" />
-	// 		<h1 id="lines-of-code-counter">0</h1>
-
-	// 		<script nonce="${nonce}" src="${scriptUri}"></script>
-	// 	</body>
-	// 	</html>`;
 }

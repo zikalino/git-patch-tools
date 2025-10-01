@@ -197,10 +197,6 @@
 
         let html = ``;
 
-        if (prefix !== '') {
-            html += `<h1>Summary for: ` + prefix + `</h1>`;
-        }
-
         patches = patches.sort((a, b) => a['name'].localeCompare(b['name']));
         html += `<hr class="dashed"/><div>`;
 
@@ -211,7 +207,7 @@
 
         html += '<hr class="dashed"/>';
         html += `<p>Total files changed: ` + totalFilesChanged + `</p>`;
-        html += `<p style='background-color: var(--vscode-diffEditor-insertedLineBackground)'>Total lines added: ` + totalLinesAdded + `</p>`;
+        html += `<p>Total lines added: ` + totalLinesAdded + `</p>`;
         html += `<p>Total lines removed: ` + totalLinesRemoved + `</p>`;
 
         html += '<hr class="dashed"/>';
