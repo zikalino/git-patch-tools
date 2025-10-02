@@ -57,8 +57,8 @@ export class PatchOperations {
 		for (let i = parsed['files'].length - 1; i >= 0 ; i--) {
 			let f = parsed['files'][i];
 
-			if (!(f['filename'].startsWith(folder + "/") &&
-			    (folder.split('/').length === (f['filename'].split('/').length - 1)))) {
+			if (!(f['filename'].startsWith(folder) &&
+			    (folder.split('/').length === (f['filename'].split('/').length)))) {
 				parsed['files'].splice(i, 1);
 			}
 		}
