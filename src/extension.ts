@@ -55,7 +55,9 @@ export function activate(context: vscode.ExtensionContext) {
 
 			for (let i = 0; i < paths.length; i++) {
 				let extracted = PatchOperations.Patch_RemoveOtherFiles(patchLines, paths[i]);
-				fs.writeFileSync(filenamePrefix + "-" + i + ".patch", extracted.join('\r\n'));
+				let postfix = paths[i].split('/').join('-').split('.').join('-');
+				extracted.push('');
+				fs.writeFileSync(filenamePrefix + "-" + postfix + ".patch", extracted.join('\n'));
 			}
 		}));
 
@@ -68,7 +70,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 			for (let i = 0; i < folders.length; i++) {
 				let extracted = PatchOperations.Patch_RemoveFilesNotInFolder(patchLines, folders[i]);
-				fs.writeFileSync(filenamePrefix + "-" + i + ".patch", extracted.join('\r\n'));
+				let postfix = folders[i].split('/').join('-').split('.').join('-');
+					
+				extracted.push('');
+				fs.writeFileSync(filenamePrefix + "-" + postfix + ".patch", extracted.join('\n'));
 			}
 		}));
 
