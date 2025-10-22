@@ -25,7 +25,7 @@ export class PatchPanel {
 	 */
 	public static currentPanel: PatchPanel | undefined;
 
-	public static readonly viewType = 'gitPatchToolsXXX';
+	public static readonly viewType = 'gitPatchTools';
 
 	private readonly _panel: vscode.WebviewPanel;
 	private readonly _extensionUri: vscode.Uri;

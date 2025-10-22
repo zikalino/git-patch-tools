@@ -1,5 +1,3 @@
-const yaml = require('js-yaml');
-
 export class PatchOperations {
 
 	public static Patch_GetStatistics(patch: string[], prefix: string) {

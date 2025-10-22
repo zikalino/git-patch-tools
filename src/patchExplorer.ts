@@ -5,7 +5,6 @@ import * as fs from 'fs';
 //import * as rimraf from 'rimraf';
 import { PatchPanel } from './patchPanel';
 import { PatchData } from './patchData';
-const yaml = require('js-yaml');
 
 //#region Utilities
 

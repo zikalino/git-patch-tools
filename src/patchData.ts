@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-
-const yaml = require('js-yaml');
+import * as yaml from 'js-yaml';
 
 export class PatchData {
 

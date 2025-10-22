@@ -1,7 +1,7 @@
 {
-	"name": "Git Patch Viewer",
-	"description": "Git Viewer and Tools",
-	"version": "0.0.1",
+	"name": "git-patch-tools",
+	"description": "Git Patch Viewer and Tools",
+	"version": "0.0.7",
 	"publisher": "Zim",
 	"private": true,
 	"license": "MIT",
@@ -17,7 +17,8 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onWebviewPanel:gitPatchTools"
+		"onWebviewPanel:gitPatchTools",
+		"workspaceContains:**/*.patch"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -105,15 +106,15 @@
 			}
 		],
 		"customEditors": [
-        	{
-            	"viewType": "gitPatchTools.patchEditor",
-            	"displayName": "Git Patch Editor",
-            	"selector": [
-                	{
-                    	"filenamePattern": "*.patch"
-                	}
-            	]
-        	}
+			{
+				"viewType": "gitPatchTools.patchEditor",
+				"displayName": "Git Patch Editor",
+				"selector": [
+					{
+						"filenamePattern": "*.patch"
+					}
+				]
+			}
 		]
 	},
 	"scripts": {
@@ -131,5 +132,9 @@
 		"eslint": "^9.13.0",
 		"typescript": "^5.9.2",
 		"typescript-eslint": "^8.39.0"
+	},
+	"dependencies": {
+		"@types/js-yaml": "^4.0.9",
+		"js-yaml": "^4.1.0"
 	}
 }
